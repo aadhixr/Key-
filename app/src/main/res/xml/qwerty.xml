@@ -42,7 +42,7 @@
     <Row>
         <Key
     android:codes="-2"
-    android:keyLabel="&#63;123"
+    android:keyLabel="@string/symbols_123"
     android:keyWidth="15%p" />
         <Key android:codes="44" android:keyLabel="," android:keyWidth="10%p" />
         <Key android:codes="32" android:keyLabel="space" android:keyWidth="40%p" android:isRepeatable="true" />
