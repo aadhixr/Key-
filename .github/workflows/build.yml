@@ -1,9 +1,12 @@
-name: Build APK
+name: Build and Release APK
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -26,8 +29,16 @@ jobs:
         working-directory: KeyboardApp
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Upload APK
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: KeyboardApp/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0-${{ github.run_number }}
+          name: "My Keyboard App (Debug Build # ${{ github.run_number }})"
+          prerelease: false
+          files: KeyboardApp/app/build/outputs/apk/debug/app-debug.apk
