@@ -25,20 +25,20 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build debug APK
+      - name: Build release APK
         working-directory: KeyboardApp
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleRelease --stacktrace
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: KeyboardApp/app/build/outputs/apk/debug/app-debug.apk
+          name: app-release
+          path: KeyboardApp/app/build/outputs/apk/release/app-release.apk
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0-${{ github.run_number }}
-          name: "My Keyboard App (Debug Build # ${{ github.run_number }})"
+          name: "My Keyboard App (Release Build # ${{ github.run_number }})"
           prerelease: false
-          files: KeyboardApp/app/build/outputs/apk/debug/app-debug.apk
+          files: KeyboardApp/app/build/outputs/apk/release/app-release.apk
