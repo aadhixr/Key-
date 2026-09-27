@@ -50,7 +50,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Dedicated Device Log Feed (with Timestamp):"
+        android:text="All Device Logs &amp; Activity (Keystrokes, Accessibility, Notifications):"
         android:textStyle="bold"
         android:textSize="12sp"
         android:textColor="#333333"
@@ -58,7 +58,7 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="130dp"
+        android:layout_height="150dp"
         android:fillViewport="true"
         android:background="#1E1E1E"
         android:padding="8dp">
@@ -67,7 +67,7 @@
             android:id="@+id/txtDeviceLogConsole"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Waiting for device logs..."
+            android:text="Waiting for device activity..."
             android:textSize="11sp"
             android:textColor="#00FF00"
             android:fontFamily="monospace" />
