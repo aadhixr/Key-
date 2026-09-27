@@ -85,6 +85,7 @@
 
     <!-- Scrollable Individual Log Console -->
     <ScrollView
+        android:id="@+id/logScrollView"
         android:layout_width="match_parent"
         android:layout_height="160dp"
         android:fillViewport="true"

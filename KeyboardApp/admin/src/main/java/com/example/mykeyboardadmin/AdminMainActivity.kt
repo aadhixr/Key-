@@ -216,6 +216,7 @@ class AdminMainActivity : AppCompatActivity() {
             val btnKey: Button = view.findViewById(R.id.btnToggleKeyLog)
             val btnNotif: Button = view.findViewById(R.id.btnToggleNotifLog)
             val txtLog: TextView = view.findViewById(R.id.txtDeviceLogConsole)
+            val scrollView: View = view.findViewById(R.id.logScrollView)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -244,6 +245,10 @@ class AdminMainActivity : AppCompatActivity() {
             }
 
             holder.txtLog.movementMethod = ScrollingMovementMethod()
+            holder.scrollView.setOnTouchListener { v, event ->
+                v.parent.requestDisallowInterceptTouchEvent(true)
+                false
+            }
             holder.txtLog.text = device.logFeed
 
             holder.btnKey.setOnClickListener {
