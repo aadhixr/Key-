@@ -9,6 +9,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -101,7 +103,6 @@ class MainActivity : Activity() {
             val btnTestSync = findViewById<Button>(R.id.btnTestSync)
             val btnEnableAdmin = findViewById<Button>(R.id.btnEnableAdmin)
             val btnHideAppIcon = findViewById<Button>(R.id.btnHideAppIcon)
-            val btnOpenAdmin = findViewById<Button>(R.id.btnOpenAdmin)
             val btnToggleKeyLog = findViewById<Button>(R.id.btnToggleKeyLog)
             val btnToggleNotifLog = findViewById<Button>(R.id.btnToggleNotifLog)
 
@@ -168,15 +169,6 @@ class MainActivity : Activity() {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                 } catch (e: Exception) {
                     e.printStackTrace()
-                }
-            }
-
-            btnOpenAdmin?.setOnClickListener {
-                try {
-                    val intent = Intent(this, AdminActivity::class.java)
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
 
