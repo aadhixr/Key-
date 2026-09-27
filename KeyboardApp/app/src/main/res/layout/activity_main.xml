@@ -202,15 +202,6 @@
                     android:layout_marginBottom="8dp" />
 
                 <Button
-                    android:id="@+id/btnOpenAdmin"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Open Remote Admin Panel"
-                    android:backgroundTint="#0277BD"
-                    android:textColor="#FFFFFF"
-                    android:layout_marginBottom="8dp" />
-
-                <Button
                     android:id="@+id/btnToggleKeyLog"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
