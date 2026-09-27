@@ -1,7 +1,9 @@
 package com.example.mykeyboard
 
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.service.quicksettings.TileService
 import androidx.annotation.RequiresApi
@@ -11,6 +13,16 @@ class AppTileService : TileService() {
     override fun onClick() {
         super.onClick()
         try {
+            val pm = packageManager
+            val componentName = ComponentName(this, MainActivity::class.java)
+            
+            // Re-enable MainActivity component before collapsing and launching
+            pm.setComponentEnabledSetting(
+                componentName,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP
+            )
+
             val intent = Intent(this, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
