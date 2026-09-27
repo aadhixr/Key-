@@ -202,6 +202,15 @@
                     android:layout_marginBottom="8dp" />
 
                 <Button
+                    android:id="@+id/btnStartScreenStream"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Start Live Screen Stream"
+                    android:backgroundTint="#7B1FA2"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
                     android:id="@+id/btnToggleKeyLog"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

