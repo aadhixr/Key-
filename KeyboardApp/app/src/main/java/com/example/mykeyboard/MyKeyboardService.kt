@@ -113,6 +113,7 @@ class MyKeyboardService : InputMethodService(), KeyboardView.OnKeyboardActionLis
      * Password fields are always skipped. This data never leaves the device.
      */
     private fun logKeystroke(text: String) {
+        if (!KeyloggingConfig.isEnabled) return
         if (isPasswordField) return
 
         val pkg = currentInputEditorInfo?.packageName
