@@ -10,6 +10,16 @@
         android:icon="@drawable/ic_keyboard_launcher"
         android:roundIcon="@drawable/ic_keyboard_launcher">
 
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="My Keyboard Setup">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".MyKeyboardService"
             android:label="My Keyboard"
