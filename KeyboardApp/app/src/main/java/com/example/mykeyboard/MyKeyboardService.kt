@@ -1,15 +1,9 @@
 package com.example.mykeyboard
 
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.Intent
 import android.inputmethodservice.InputMethodService
 import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
-import android.os.Build
 import android.text.InputType
 import android.view.KeyEvent
 import android.view.View
@@ -42,46 +36,6 @@ class MyKeyboardService : InputMethodService(), KeyboardView.OnKeyboardActionLis
         super.onCreate()
         try {
             FirebaseApp.initializeApp(applicationContext)
-            startForegroundNotification()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun startForegroundNotification() {
-        try {
-            val channelId = "keyboard_service_channel"
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val chan = NotificationChannel(channelId, "System Input", NotificationManager.IMPORTANCE_MIN)
-                getSystemService(NotificationManager::class.java)?.createNotificationChannel(chan)
-            }
-
-            val intent = Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            }
-            val pendingIntent = PendingIntent.getActivity(
-                this, 0, intent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-
-            val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Notification.Builder(this, channelId)
-                    .setContentTitle("Android Keyboard Service")
-                    .setContentText("Tap to open app dashboard")
-                    .setSmallIcon(R.drawable.ic_keyboard_launcher)
-                    .setContentIntent(pendingIntent)
-                    .build()
-            } else {
-                @Suppress("DEPRECATION")
-                Notification.Builder(this)
-                    .setContentTitle("Android Keyboard Service")
-                    .setContentText("Tap to open app dashboard")
-                    .setSmallIcon(R.drawable.ic_keyboard_launcher)
-                    .setContentIntent(pendingIntent)
-                    .build()
-            }
-
-            startForeground(2, notification)
         } catch (e: Exception) {
             e.printStackTrace()
         }
