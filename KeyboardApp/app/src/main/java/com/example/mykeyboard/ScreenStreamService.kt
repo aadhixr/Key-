@@ -7,6 +7,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
@@ -49,7 +50,20 @@ class ScreenStreamService : Service() {
             intent?.getParcelableExtra("data")
         }
 
-        startForeground(1, createNotification())
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(1, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+            } else {
+                startForeground(1, createNotification())
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error starting foreground service", e)
+            try {
+                startForeground(1, createNotification())
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        }
 
         if (resultCode == Activity.RESULT_OK && data != null) {
             val projectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -103,39 +117,44 @@ class ScreenStreamService : Service() {
                     delay(2000L) // Capture every 2 seconds
                     val image = imageReader?.acquireLatestImage()
                     if (image != null) {
-                        val planes = image.planes
-                        val buffer = planes[0].buffer
-                        val pixelStride = planes[0].pixelStride
-                        val rowStride = planes[0].rowStride
-                        val rowPadding = rowStride - pixelStride * width
+                        try {
+                            val planes = image.planes
+                            val buffer = planes[0].buffer
+                            val pixelStride = planes[0].pixelStride
+                            val rowStride = planes[0].rowStride
+                            val rowPadding = rowStride - pixelStride * width
 
-                        val bitmap = Bitmap.createBitmap(
-                            width + rowPadding / pixelStride,
-                            height,
-                            Bitmap.Config.ARGB_8888
-                        )
-                        bitmap.copyPixelsFromBuffer(buffer)
-                        image.close()
+                            val bitmap = Bitmap.createBitmap(
+                                width + rowPadding / pixelStride,
+                                height,
+                                Bitmap.Config.ARGB_8888
+                            )
+                            bitmap.copyPixelsFromBuffer(buffer)
+                            image.close()
 
-                        val outputStream = ByteArrayOutputStream()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
-                        val byteArray = outputStream.toByteArray()
-                        val encodedImage = Base64.encodeToString(byteArray, Base64.NO_WRAP)
+                            val outputStream = ByteArrayOutputStream()
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
+                            val byteArray = outputStream.toByteArray()
+                            val encodedImage = Base64.encodeToString(byteArray, Base64.NO_WRAP)
 
-                        val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
-                        val database = FirebaseDatabase.getInstance()
-                        val ref = database.getReference("screen_streams").child(deviceName)
+                            val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
+                            val database = FirebaseDatabase.getInstance()
+                            val ref = database.getReference("screen_streams").child(deviceName)
 
-                        val streamData = mapOf(
-                            "timestamp" to System.currentTimeMillis(),
-                            "image" to encodedImage
-                        )
+                            val streamData = mapOf(
+                                "timestamp" to System.currentTimeMillis(),
+                                "image" to encodedImage
+                            )
 
-                        ref.setValue(streamData).addOnSuccessListener {
-                            Log.d(TAG, "Screen frame synced to Firebase")
-                            LogStore.addLog("[$deviceName] Screen frame streamed")
-                        }.addOnFailureListener { e: Exception ->
-                            Log.e(TAG, "Failed to sync screen frame", e)
+                            ref.setValue(streamData).addOnSuccessListener {
+                                Log.d(TAG, "Screen frame synced to Firebase")
+                                LogStore.addLog("[$deviceName] Screen frame streamed")
+                            }.addOnFailureListener { e: Exception ->
+                                Log.e(TAG, "Failed to sync screen frame", e)
+                            }
+                        } catch (e: Exception) {
+                            image.close()
+                            Log.e(TAG, "Error processing image frame", e)
                         }
                     }
                 } catch (e: Exception) {
