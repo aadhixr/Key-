@@ -5,24 +5,23 @@
     android:orientation="vertical"
     android:background="#FFFFFF"
     android:padding="16dp"
-    android:layout_marginBottom="12dp"
-    android:elevation="3dp">
+    android:layout_marginBottom="10dp"
+    android:elevation="2dp">
 
     <TextView
         android:id="@+id/txtDeviceName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Device Name"
-        android:textSize="18sp"
+        android:textSize="16sp"
         android:textStyle="bold"
         android:textColor="#000000"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="10dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="8dp">
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/btnToggleKeyLog"
@@ -30,10 +29,10 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Key Logger: ..."
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:backgroundTint="#388E3C"
             android:textColor="#FFFFFF"
-            android:layout_marginEnd="4dp" />
+            android:layout_marginEnd="6dp" />
 
         <Button
             android:id="@+id/btnToggleNotifLog"
@@ -41,36 +40,10 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Notif Logger: ..."
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:backgroundTint="#388E3C"
             android:textColor="#FFFFFF"
-            android:layout_marginStart="4dp" />
+            android:layout_marginStart="6dp" />
     </LinearLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Live Activity / Log Feed:"
-        android:textStyle="bold"
-        android:textSize="12sp"
-        android:textColor="#333333"
-        android:layout_marginBottom="4dp" />
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:fillViewport="true"
-        android:background="#1E1E1E"
-        android:padding="8dp">
-
-        <TextView
-            android:id="@+id/txtDeviceLogConsole"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Waiting for device activity..."
-            android:textSize="11sp"
-            android:textColor="#00FF00"
-            android:fontFamily="monospace" />
-    </ScrollView>
 
 </LinearLayout>

