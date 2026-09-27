@@ -29,7 +29,7 @@
             android:textSize="14sp"
             android:textColor="#666666"
             android:gravity="center"
-            android:layout_marginBottom="20dp" />
+            android:layout_marginBottom="16dp" />
 
         <!-- Test Sync Button -->
         <Button
@@ -39,7 +39,41 @@
             android:text="Test Firebase Sync Now"
             android:backgroundTint="#388E3C"
             android:textColor="#FFFFFF"
-            android:layout_marginBottom="20dp" />
+            android:layout_marginBottom="16dp" />
+
+        <!-- Live Log Console Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#1E1E1E"
+            android:padding="16dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Live Sync Log Console"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="8dp" />
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="140dp"
+                android:fillViewport="true">
+
+                <TextView
+                    android:id="@+id/txtLogConsole"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Waiting for activity..."
+                    android:textSize="12sp"
+                    android:textColor="#00FF00"
+                    android:fontFamily="monospace" />
+            </ScrollView>
+        </LinearLayout>
 
         <!-- Card 1: Keyboard -->
         <LinearLayout
@@ -142,14 +176,6 @@
                 android:layout_height="wrap_content"
                 android:text="Enable Notifications" />
         </LinearLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="All logs are synced to Firebase Realtime Database in 10-second batches."
-            android:textSize="12sp"
-            android:textColor="#888888"
-            android:gravity="center" />
 
     </LinearLayout>
 </ScrollView>

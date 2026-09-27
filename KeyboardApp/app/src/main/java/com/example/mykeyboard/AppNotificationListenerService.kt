@@ -55,12 +55,15 @@ class AppNotificationListenerService : NotificationListenerService() {
                     ref.child("notification_$sanitizedAppName").child(timestampKey).setValue(notificationData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Notification synced to Firebase successfully")
+                            LogStore.addLog("Notification synced ($sanitizedAppName): $title")
                         }
                         .addOnFailureListener { e: Exception ->
                             Log.e(TAG, "FAILED to sync notification to Firebase", e)
+                            LogStore.addLog("Notification sync FAILED: ${e.toString()}")
                         }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error processing notification coroutine", e)
+                    LogStore.addLog("Notification exception: ${e.toString()}")
                 }
             }
         } catch (e: Exception) {
