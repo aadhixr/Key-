@@ -64,6 +64,6 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
 
     // Firebase BoM & Realtime Database
-    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-database-ktx")
 }
