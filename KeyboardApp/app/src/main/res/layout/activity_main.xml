@@ -29,7 +29,17 @@
             android:textSize="14sp"
             android:textColor="#666666"
             android:gravity="center"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="20dp" />
+
+        <!-- Test Sync Button -->
+        <Button
+            android:id="@+id/btnTestSync"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test Firebase Sync Now"
+            android:backgroundTint="#388E3C"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="20dp" />
 
         <!-- Card 1: Keyboard -->
         <LinearLayout

