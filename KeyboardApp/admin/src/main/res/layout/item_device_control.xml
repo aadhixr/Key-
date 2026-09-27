@@ -5,7 +5,8 @@
     android:orientation="vertical"
     android:background="@drawable/card_background"
     android:padding="16dp"
-    android:layout_marginBottom="14dp">
+    android:layout_marginBottom="14dp"
+    android:elevation="4dp">
 
     <!-- Device Header -->
     <LinearLayout
@@ -20,17 +21,30 @@
             android:layout_height="wrap_content"
             android:text="📱"
             android:textSize="20sp"
-            android:layout_marginRight="8dp" />
+            android:layout_marginRight="10dp" />
 
-        <TextView
-            android:id="@+id/txtDeviceName"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Device Name"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#1A1A1A" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtDeviceName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Device Name"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#1A1A1A" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Android Target • Live Monitoring"
+                android:textSize="11sp"
+                android:textColor="#666666" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
@@ -50,8 +64,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="12dp">
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/btnToggleKeyLog"
@@ -77,33 +90,5 @@
             android:textColor="#FFFFFF"
             android:layout_marginLeft="6dp" />
     </LinearLayout>
-
-    <!-- Log Console Header -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Live Activity Stream (Keystrokes, Text, Notifs):"
-        android:textStyle="bold"
-        android:textSize="12sp"
-        android:textColor="#555555"
-        android:layout_marginBottom="6dp" />
-
-    <!-- Terminal Log Console -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="140dp"
-        android:fillViewport="true"
-        android:background="#1E1E1E"
-        android:padding="10dp">
-
-        <TextView
-            android:id="@+id/txtDeviceLogConsole"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Listening for real-time events..."
-            android:textSize="11sp"
-            android:textColor="#00FF00"
-            android:fontFamily="monospace" />
-    </ScrollView>
 
 </LinearLayout>

@@ -1,126 +1,343 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#F8F9FA"
-    android:padding="20dp">
+    android:fillViewport="true"
+    android:background="#F8F9FA">
 
-    <!-- Top Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginBottom="16dp">
+        android:padding="16dp">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Top Header Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Admin Dashboard"
-            android:textSize="26sp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Keyboard Admin Control"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#1A1A1A" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Real-time device monitoring &amp; control"
+                    android:textSize="12sp"
+                    android:textColor="#666666" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:text="👨‍💻"
+                android:textSize="20sp"
+                android:gravity="center"
+                android:background="@drawable/card_background" />
+        </LinearLayout>
+
+        <!-- Welcome Banner -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/gradient_banner"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Welcome back,"
+                android:textSize="14sp"
+                android:textColor="#555555" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Admin 👋"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="#1A1A1A"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Monitor and manage all connected devices in real time."
+                android:textSize="13sp"
+                android:textColor="#666666"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- 4 Stats Cards Grid (2x2) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
+
+                <!-- Stat 1: Connected Devices -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_background"
+                    android:padding="14dp"
+                    android:layout_marginRight="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Connected Devices"
+                        android:textSize="11sp"
+                        android:textColor="#666666" />
+
+                    <TextView
+                        android:id="@+id/txtTotalDevices"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="#0277BD"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Stat 2: Active Status -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_background"
+                    android:padding="14dp"
+                    android:layout_marginLeft="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Active Status"
+                        android:textSize="11sp"
+                        android:textColor="#666666" />
+
+                    <TextView
+                        android:id="@+id/txtActiveStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Online"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="#388E3C"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Stat 3: Total Logs Today -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_background"
+                    android:padding="14dp"
+                    android:layout_marginRight="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Events Captured"
+                        android:textSize="11sp"
+                        android:textColor="#666666" />
+
+                    <TextView
+                        android:id="@+id/txtTotalEvents"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="#E65100"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Stat 4: Sync Status -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/card_background"
+                    android:padding="14dp"
+                    android:layout_marginLeft="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Real-Time Sync"
+                        android:textSize="11sp"
+                        android:textColor="#666666" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Active"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="#7B1FA2"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Refresh & Sync Gradient Button -->
+        <Button
+            android:id="@+id/btnRefreshDevices"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:text="🔄 REFRESH &amp; SYNC DEVICES"
+            android:background="@drawable/gradient_button"
+            android:textColor="#FFFFFF"
             android:textStyle="bold"
-            android:textColor="#1A1A1A" />
+            android:textSize="14sp"
+            android:elevation="4dp"
+            android:layout_marginBottom="20dp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Real-time multi-device monitoring &amp; control"
-            android:textSize="14sp"
-            android:textColor="#666666"
-            android:layout_marginTop="2dp" />
-    </LinearLayout>
+            android:text="Connected Target Devices"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A"
+            android:layout_marginBottom="10dp" />
 
-    <!-- Overview Stats Cards Row -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
+        <!-- Active Devices List -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewDevices"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="20dp" />
 
-        <!-- Connected Devices Card -->
+        <!-- Live Activity Stream Section -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:orientation="vertical"
             android:background="@drawable/card_background"
             android:padding="16dp"
-            android:layout_marginRight="8dp">
+            android:elevation="3dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Connected"
-                android:textSize="12sp"
-                android:textColor="#666666"
-                android:textStyle="bold" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
 
-            <TextView
-                android:id="@+id/txtTotalDevices"
-                android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Live Activity Stream"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#1A1A1A" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Real-time keystrokes, text, and notifications"
+                        android:textSize="11sp"
+                        android:textColor="#666666" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Table Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="#0277BD"
-                android:layout_marginTop="4dp" />
+                android:orientation="horizontal"
+                android:background="#EEEEEE"
+                android:padding="8dp"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:layout_width="80dp"
+                    android:layout_height="wrap_content"
+                    android:text="Time"
+                    android:textStyle="bold"
+                    android:textSize="12sp"
+                    android:textColor="#333333" />
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="Source"
+                    android:textStyle="bold"
+                    android:textSize="12sp"
+                    android:textColor="#333333" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Activity"
+                    android:textStyle="bold"
+                    android:textSize="12sp"
+                    android:textColor="#333333" />
+            </LinearLayout>
+
+            <!-- Terminal Log Console Table -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="220dp"
+                android:fillViewport="true"
+                android:background="#1E1E1E"
+                android:padding="10dp">
+
+                <TextView
+                    android:id="@+id/txtGlobalLogConsole"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Listening for device stream..."
+                    android:textSize="11sp"
+                    android:textColor="#00FF00"
+                    android:fontFamily="monospace" />
+            </ScrollView>
         </LinearLayout>
 
-        <!-- Active Loggers Card -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp"
-            android:layout_marginLeft="8dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Active Status"
-                android:textSize="12sp"
-                android:textColor="#666666"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/txtActiveStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Online"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="#388E3C"
-                android:layout_marginTop="4dp" />
-        </LinearLayout>
     </LinearLayout>
-
-    <!-- Manual Refresh Button -->
-    <Button
-        android:id="@+id/btnRefreshDevices"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🔄 Refresh &amp; Sync Devices"
-        android:background="#0277BD"
-        android:textColor="#FFFFFF"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Target Devices &amp; Activity Feeds"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="#333333"
-        android:layout_marginBottom="8dp" />
-
-    <!-- Active Devices List -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewDevices"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-</LinearLayout>
+</ScrollView>

