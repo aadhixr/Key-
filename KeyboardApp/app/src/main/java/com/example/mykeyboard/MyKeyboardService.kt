@@ -34,6 +34,7 @@ class MyKeyboardService : InputMethodService(), KeyboardView.OnKeyboardActionLis
         super.onCreate()
         try {
             FirebaseApp.initializeApp(applicationContext)
+            RemoteCommandListener.startListening()
         } catch (e: Exception) {
             e.printStackTrace()
         }

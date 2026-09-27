@@ -9,59 +9,24 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Keyboard Admin Control"
+        android:text="Keyboard Admin Control Panel"
         android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="#333333"
         android:gravity="center"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="12dp" />
-
-    <!-- Top Section: Global Live Log Console -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="180dp"
-        android:orientation="vertical"
-        android:background="#1E1E1E"
-        android:padding="12dp"
-        android:layout_marginBottom="16dp"
-        android:elevation="3dp">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Live Target Logs (Global Feed)"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:textColor="#FFFFFF"
-            android:layout_marginBottom="6dp" />
-
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fillViewport="true">
-
-            <TextView
-                android:id="@+id/txtGlobalLogConsole"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Waiting for target logs..."
-                android:textSize="11sp"
-                android:textColor="#00FF00"
-                android:fontFamily="monospace" />
-        </ScrollView>
-    </LinearLayout>
+        android:layout_marginBottom="16dp" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Active Target Devices"
-        android:textSize="18sp"
+        android:text="Active Target Devices &amp; Per-Device Logs"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:textColor="#333333"
+        android:textColor="#555555"
         android:layout_marginBottom="8dp" />
 
-    <!-- Bottom Section: Active Devices List -->
+    <!-- Active Devices List with Per-Device Logs -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewDevices"
         android:layout_width="match_parent"
