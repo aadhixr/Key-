@@ -6,7 +6,7 @@
     android:background="#0D1117"
     android:padding="16dp">
 
-    <!-- Minimalist Elite Header (HexSecGPT style) -->
+    <!-- Minimalist Elite Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -23,7 +23,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="HEXSEC // C2_CONSOLE"
+                android:text="AADHI // C2_CONSOLE"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="#58A6FF"
