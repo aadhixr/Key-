@@ -3,21 +3,100 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#F5F5F5">
+    android:background="#F8F9FA"
+    android:padding="20dp">
 
-    <TextView
+    <!-- Top Header -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Keyboard Admin Control"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:textColor="#333333"
-        android:gravity="center"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="12dp" />
+        android:orientation="vertical"
+        android:layout_marginBottom="16dp">
 
-    <!-- Manual Refresh / Sync Button -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Admin Dashboard"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Real-time multi-device monitoring &amp; control"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <!-- Overview Stats Cards Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <!-- Connected Devices Card -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="16dp"
+            android:layout_marginRight="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Connected"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtTotalDevices"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#0277BD"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Active Loggers Card -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="16dp"
+            android:layout_marginLeft="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Active Status"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtActiveStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Online"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#388E3C"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Manual Refresh Button -->
     <Button
         android:id="@+id/btnRefreshDevices"
         android:layout_width="match_parent"
@@ -25,17 +104,19 @@
         android:text="🔄 Refresh &amp; Sync Devices"
         android:background="#0277BD"
         android:textColor="#FFFFFF"
-        android:layout_marginBottom="12dp" />
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Connected Target Devices &amp; Remote Toggles"
+        android:text="Target Devices &amp; Activity Feeds"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:textColor="#555555"
+        android:textColor="#333333"
         android:layout_marginBottom="8dp" />
 
+    <!-- Active Devices List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewDevices"
         android:layout_width="match_parent"
