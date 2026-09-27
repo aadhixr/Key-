@@ -9,24 +9,33 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Keyboard Admin Control Panel"
+        android:text="Keyboard Admin Control"
         android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="#333333"
         android:gravity="center"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="12dp" />
+
+    <!-- Manual Refresh / Sync Button -->
+    <Button
+        android:id="@+id/btnRefreshDevices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🔄 Refresh &amp; Sync Devices"
+        android:background="#0277BD"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="12dp" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Connected Target Devices &amp; Dedicated Device Logs"
+        android:text="Connected Target Devices &amp; Remote Toggles"
         android:textSize="16sp"
         android:textStyle="bold"
         android:textColor="#555555"
         android:layout_marginBottom="8dp" />
 
-    <!-- Active Devices List with Dedicated Per-Device Logs -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewDevices"
         android:layout_width="match_parent"
