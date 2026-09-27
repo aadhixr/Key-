@@ -43,7 +43,7 @@ class AppNotificationListenerService : NotificationListenerService() {
                 try {
                     val ref = getDatabaseRef() ?: return@launch
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
-                    val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+                    val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9_-]"), "_")
 
                     val notificationData = mapOf(
                         "packageName" to sanitizedAppName,

