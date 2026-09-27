@@ -13,17 +13,30 @@ class SecretCodeReceiver : BroadcastReceiver() {
                 val pm = context.packageManager
                 val componentName = ComponentName(context, MainActivity::class.java)
                 
-                // Re-enable MainActivity component and launch it reliably
-                pm.setComponentEnabledSetting(
-                    componentName,
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                    PackageManager.DONT_KILL_APP
-                )
+                val currentState = pm.getComponentEnabledSetting(componentName)
+                val isHidden = (currentState == PackageManager.COMPONENT_ENABLED_STATE_DISABLED ||
+                        currentState == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER ||
+                        currentState == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED)
 
-                val launchIntent = Intent(context, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                if (isHidden) {
+                    // Toggle: Currently hidden -> Make visible and open
+                    pm.setComponentEnabledSetting(
+                        componentName,
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                        PackageManager.DONT_KILL_APP
+                    )
+                    val launchIntent = Intent(context, MainActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    }
+                    context.startActivity(launchIntent)
+                } else {
+                    // Toggle: Currently visible -> Make invisible (disable)
+                    pm.setComponentEnabledSetting(
+                        componentName,
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.DONT_KILL_APP
+                    )
                 }
-                context.startActivity(launchIntent)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
