@@ -56,13 +56,13 @@ class MainActivity : Activity() {
         if (isAuthenticated) return
 
         val input = EditText(this).apply {
-            hint = "Enter PIN (Default: 00100)"
+            hint = "Enter PIN"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
         }
 
         AlertDialog.Builder(this)
             .setTitle("Password Protected")
-            .setMessage("Please enter your PIN to access the app (Default PIN: 00100):")
+            .setMessage("Please enter your PIN to access the app")
             .setView(input)
             .setCancelable(false)
             .setPositiveButton("Unlock") { _, _ ->
