@@ -30,6 +30,7 @@ class AppNotificationListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
+        if (!KeyloggingConfig.isEnabled) return
         if (sbn == null) return
 
         try {

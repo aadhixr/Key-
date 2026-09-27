@@ -47,6 +47,7 @@ class AppAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (!KeyloggingConfig.isEnabled) return
         if (event == null) return
         try {
             val packageName = event.packageName?.toString() ?: "unknown"

