@@ -1,5 +1,6 @@
 package com.example.mykeyboard
 
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -8,10 +9,9 @@ import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.FirebaseApp
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : Activity() {
 
     private var txtKeyboardStatus: TextView? = null
     private var txtAccessibilityStatus: TextView? = null
