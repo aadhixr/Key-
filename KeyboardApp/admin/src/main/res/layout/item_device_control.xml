@@ -5,8 +5,7 @@
     android:orientation="vertical"
     android:background="@drawable/card_background"
     android:padding="16dp"
-    android:layout_marginBottom="14dp"
-    android:elevation="4dp">
+    android:layout_marginBottom="14dp">
 
     <!-- Device Header -->
     <LinearLayout
@@ -21,30 +20,17 @@
             android:layout_height="wrap_content"
             android:text="📱"
             android:textSize="20sp"
-            android:layout_marginRight="10dp" />
+            android:layout_marginRight="8dp" />
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/txtDeviceName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/txtDeviceName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Device Name"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#1A1A1A" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Android Target • Live Monitoring"
-                android:textSize="11sp"
-                android:textColor="#666666" />
-        </LinearLayout>
+            android:text="Device Name"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -60,7 +46,7 @@
             android:paddingBottom="4dp" />
     </LinearLayout>
 
-    <!-- Toggle Buttons -->
+    <!-- Toggle Buttons with Rounded Corners -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -74,7 +60,7 @@
             android:text="Key Logger: ..."
             android:textSize="11sp"
             android:textStyle="bold"
-            android:backgroundTint="#388E3C"
+            android:background="@drawable/rounded_button"
             android:textColor="#FFFFFF"
             android:layout_marginRight="6dp" />
 
@@ -86,7 +72,7 @@
             android:text="Notif Logger: ..."
             android:textSize="11sp"
             android:textStyle="bold"
-            android:backgroundTint="#388E3C"
+            android:background="@drawable/rounded_button"
             android:textColor="#FFFFFF"
             android:layout_marginLeft="6dp" />
     </LinearLayout>

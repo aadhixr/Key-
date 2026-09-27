@@ -47,7 +47,7 @@
                 android:layout_height="36dp"
                 android:text="🌙 Theme"
                 android:textSize="11sp"
-                android:background="#1E1E1E"
+                android:background="@drawable/rounded_button"
                 android:textColor="#FFFFFF" />
         </LinearLayout>
 
@@ -354,12 +354,14 @@
                     android:textColor="#333333" />
             </LinearLayout>
 
+            <!-- Scrollable Terminal Log Console -->
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="220dp"
                 android:fillViewport="true"
                 android:background="#1E1E1E"
-                android:padding="10dp">
+                android:padding="10dp"
+                android:scrollbars="vertical">
 
                 <TextView
                     android:id="@+id/txtGlobalLogConsole"
@@ -368,7 +370,8 @@
                     android:text="Listening for device stream..."
                     android:textSize="11sp"
                     android:textColor="#00FF00"
-                    android:fontFamily="monospace" />
+                    android:fontFamily="monospace"
+                    android:scrollbars="vertical" />
             </ScrollView>
         </LinearLayout>
 
