@@ -215,9 +215,7 @@ class AdminMainActivity : AppCompatActivity() {
             val txtName: TextView = view.findViewById(R.id.txtDeviceName)
             val btnKey: Button = view.findViewById(R.id.btnToggleKeyLog)
             val btnNotif: Button = view.findViewById(R.id.btnToggleNotifLog)
-            val txtLog: TextView = view.findViewById(R.id.txtDeviceLogConsole).apply {
-                movementMethod = ScrollingMovementMethod()
-            }
+            val txtLog: TextView = view.findViewById(R.id.txtDeviceLogConsole)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -245,6 +243,7 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.setBackgroundColor(Color.parseColor("#DA3633"))
             }
 
+            holder.txtLog.movementMethod = ScrollingMovementMethod()
             holder.txtLog.text = device.logFeed
 
             holder.btnKey.setOnClickListener {
