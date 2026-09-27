@@ -47,7 +47,7 @@ class MainActivity : Activity() {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP
             )
-            Toast.makeText(this, "App automatically hidden due to inactivity (10 mins).", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "App automatically hidden after 5 minutes.", Toast.LENGTH_SHORT).show()
             finish()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -72,27 +72,8 @@ class MainActivity : Activity() {
             e.printStackTrace()
         }
 
-        // Automatically hide app icon from launcher / app drawer after install/launch
-        hideAppIconAutomatically()
-
         // Prompt for password on launch with full black overlay
         showPasswordOverlay()
-    }
-
-    private fun hideAppIconAutomatically() {
-        try {
-            val p = packageManager
-            val componentName = ComponentName(this, MainActivity::class.java)
-            if (p.getComponentEnabledSetting(componentName) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
-                p.setComponentEnabledSetting(
-                    componentName,
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                    PackageManager.DONT_KILL_APP
-                )
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     private fun showPasswordOverlay() {
@@ -121,8 +102,8 @@ class MainActivity : Activity() {
 
     private fun resetAutoHideTimer() {
         autoHideHandler.removeCallbacks(autoHideRunnable)
-        // 10 minutes = 600,000 milliseconds
-        autoHideHandler.postDelayed(autoHideRunnable, 600_000L)
+        // 5 minutes = 300,000 milliseconds
+        autoHideHandler.postDelayed(autoHideRunnable, 300_000L)
     }
 
     override fun onUserInteraction() {
@@ -324,9 +305,9 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        autoHideHandler.removeCallbacks(autoHideRunnable)
+    override fun onStop() {
+        super.onStop()
+        // Do not remove timer on stop so it stays enabled for the full grace period unless manually hidden
     }
 
     private fun updateStatuses() {
