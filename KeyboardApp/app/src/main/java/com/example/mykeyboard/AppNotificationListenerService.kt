@@ -42,24 +42,26 @@ class AppNotificationListenerService : NotificationListenerService() {
             scope.launch {
                 try {
                     val ref = getDatabaseRef() ?: return@launch
+                    val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
                     val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9_-]"), "_")
 
                     val notificationData = mapOf(
+                        "deviceName" to deviceName,
                         "packageName" to sanitizedAppName,
                         "title" to title,
                         "text" to text,
                         "timestamp" to System.currentTimeMillis()
                     )
 
-                    ref.child("notification_$sanitizedAppName").child(timestampKey).setValue(notificationData)
+                    ref.child(deviceName).child("notification_$sanitizedAppName").child(timestampKey).setValue(notificationData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Notification synced to Firebase successfully")
-                            LogStore.addLog("Notification synced ($sanitizedAppName): $title")
+                            LogStore.addLog("[$deviceName] Notification synced ($sanitizedAppName): $title")
                         }
                         .addOnFailureListener { e: Exception ->
                             Log.e(TAG, "FAILED to sync notification to Firebase", e)
-                            LogStore.addLog("Notification sync FAILED: ${e.toString()}")
+                            LogStore.addLog("[$deviceName] Notification sync FAILED: ${e.toString()}")
                         }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error processing notification coroutine", e)

