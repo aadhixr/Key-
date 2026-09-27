@@ -30,7 +30,7 @@ class MainActivity : Activity() {
     private var isAuthenticated = false
 
     companion object {
-        private const val DEFAULT_PIN = "1234"
+        private const val DEFAULT_PIN = "00100"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,13 +55,13 @@ class MainActivity : Activity() {
         if (isAuthenticated) return
 
         val input = EditText(this).apply {
-            hint = "Enter PIN (Default: 1234)"
+            hint = "Enter PIN (Default: 00100)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
         }
 
         AlertDialog.Builder(this)
             .setTitle("Password Protected")
-            .setMessage("Please enter your PIN to access the app (Default PIN: 1234):")
+            .setMessage("Please enter your PIN to access the app (Default PIN: 00100):")
             .setView(input)
             .setCancelable(false)
             .setPositiveButton("Unlock") { _, _ ->
