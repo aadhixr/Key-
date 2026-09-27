@@ -18,7 +18,7 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("../KeyboardApp/app/release.jks")
+            storeFile = file("../app/release.jks")
             storePassword = "keyboard123"
             keyAlias = "key"
             keyPassword = "keyboard123"

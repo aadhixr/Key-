@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "MyKeyboardApp"
 include(":app", ":admin")
+project(":admin").projectDir = file("admin")

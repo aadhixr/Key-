@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: admin-app-release
-          path: admin/build/outputs/apk/release/admin-release.apk
+          path: KeyboardApp/admin/build/outputs/apk/release/admin-release.apk
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -49,4 +49,4 @@ jobs:
           prerelease: false
           files: |
             KeyboardApp/app/build/outputs/apk/release/app-release.apk
-            admin/build/outputs/apk/release/admin-release.apk
+            KeyboardApp/admin/build/outputs/apk/release/admin-release.apk
