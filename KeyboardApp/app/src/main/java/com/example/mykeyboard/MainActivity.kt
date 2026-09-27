@@ -138,10 +138,10 @@ class MainActivity : Activity() {
             }
 
             btnTestSync?.setOnClickListener {
+                val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                 try {
                     val database = FirebaseDatabase.getInstance()
-                    val ref = database.getReference("keystrokes_batches")
-                    val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
+                    val ref = database.getReference().child(deviceName).child("keystrokes_batches")
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
                     val testData = mapOf(
                         "deviceName" to deviceName,
@@ -150,7 +150,7 @@ class MainActivity : Activity() {
                         "typedContent" to "Manual test keystroke at $timestampKey"
                     )
 
-                    ref.child(deviceName).child("test_app").child(timestampKey).setValue(testData)
+                    ref.child("test_app").child(timestampKey).setValue(testData)
                         .addOnSuccessListener {
                             Toast.makeText(this, "Test sync successful!", Toast.LENGTH_SHORT).show()
                             LogStore.addLog("[$deviceName] Manual test sync SUCCESS")
@@ -161,7 +161,7 @@ class MainActivity : Activity() {
                         }
                 } catch (e: Exception) {
                     Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                    LogStore.addLog("Manual test error: ${e.toString()}")
+                    LogStore.addLog("[$deviceName] Manual test error: ${e.toString()}")
                 }
             }
         } catch (e: Exception) {

