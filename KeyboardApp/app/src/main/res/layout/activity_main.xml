@@ -25,7 +25,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Manage your system-wide monitoring and keyboard services below."
+            android:text="Manage your system-wide monitoring and security below."
             android:textSize="14sp"
             android:textColor="#666666"
             android:gravity="center"
@@ -150,7 +150,7 @@
             android:orientation="vertical"
             android:background="@drawable/key_background"
             android:padding="16dp"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="16dp">
 
             <TextView
                 android:layout_width="match_parent"
@@ -175,6 +175,41 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Enable Notifications" />
+        </LinearLayout>
+
+        <!-- Card 4: Uninstall Protection -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/key_background"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="4. Uninstall Protection (Device Admin)"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#000000" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Prevent unauthorized uninstallation of this app."
+                android:textSize="12sp"
+                android:textColor="#555555"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/btnEnableAdmin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enable Uninstall Protection"
+                android:backgroundTint="#C62828"
+                android:textColor="#FFFFFF" />
         </LinearLayout>
 
     </LinearLayout>
