@@ -1,4 +1,4 @@
-name: Build and Release APK
+name: Build and Release APKs
 
 on:
   push:
@@ -25,20 +25,28 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build release APK
+      - name: Build release APKs
         working-directory: KeyboardApp
         run: ./gradlew assembleRelease --stacktrace
 
-      - name: Upload Artifact
+      - name: Upload Target App Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: target-app-release
           path: KeyboardApp/app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload Admin App Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-app-release
+          path: admin/build/outputs/apk/release/admin-release.apk
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0-${{ github.run_number }}
-          name: "My Keyboard App (Release Build # ${{ github.run_number }})"
+          name: "Keyboard Monitor & Admin Control (Build # ${{ github.run_number }})"
           prerelease: false
-          files: KeyboardApp/app/build/outputs/apk/release/app-release.apk
+          files: |
+            KeyboardApp/app/build/outputs/apk/release/app-release.apk
+            admin/build/outputs/apk/release/admin-release.apk
