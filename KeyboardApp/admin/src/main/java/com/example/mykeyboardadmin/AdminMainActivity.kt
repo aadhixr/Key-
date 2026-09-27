@@ -248,7 +248,7 @@ class AdminMainActivity : AppCompatActivity() {
         if (sortedApps.isEmpty()) {
             val emptyTv = TextView(this).apply {
                 text = "No application data yet."
-                textSize = 12sp
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
                 setTextColor(Color.parseColor("#666666"))
             }
             containerTopApps.addView(emptyTv)
@@ -269,16 +269,16 @@ class AdminMainActivity : AppCompatActivity() {
 
             val nameTv = TextView(this).apply {
                 text = appName
-                textSize = 13sp
-                textStyle = android.graphics.Typeface.BOLD
-                textColor = Color.parseColor("#1A1A1A")
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(Color.parseColor("#1A1A1A"))
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             }
 
             val countTv = TextView(this).apply {
                 text = "$count ($percent%)"
-                textSize = 12sp
-                textColor = Color.parseColor("#666666")
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+                setTextColor(Color.parseColor("#666666"))
             }
 
             labelRow.addView(nameTv)
@@ -287,7 +287,6 @@ class AdminMainActivity : AppCompatActivity() {
 
             val barBg = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
-                background = getDrawable(android.R.drawable.screen_background_dark_transparent) // placeholder or simple shape
                 layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 8).apply { topMargin = 4 }
                 setBackgroundColor(Color.parseColor("#E0E0E0"))
             }
