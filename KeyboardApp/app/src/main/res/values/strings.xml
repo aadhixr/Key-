@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">My Keyboard</string>
-    <string name="label_123">\?123</string>
+    <string name="label_123">123?</string>
     <string name="label_switch_num">=\&lt;</string>
 </resources>

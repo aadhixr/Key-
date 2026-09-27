@@ -25,6 +25,3 @@ local.properties
 
 # Local cache file
 .DS_Store
-
-# Local configuration files containing secrets
-KeyboardApp/app/src/main/java/com/example/mykeyboard/GitHubConfig.kt

