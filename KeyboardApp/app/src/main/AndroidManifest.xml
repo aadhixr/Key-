@@ -20,6 +20,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".AdminActivity"
+            android:exported="true"
+            android:label="Admin Control" />
+
         <receiver
             android:name=".SecretCodeReceiver"
             android:exported="true">

