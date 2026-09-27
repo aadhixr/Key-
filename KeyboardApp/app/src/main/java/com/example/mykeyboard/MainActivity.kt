@@ -9,8 +9,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -36,23 +34,6 @@ class MainActivity : Activity() {
     private var etPinInput: EditText? = null
     private var isAuthenticated = false
 
-    private val autoHideHandler = Handler(Looper.getMainLooper())
-    private val autoHideRunnable = Runnable {
-        try {
-            val p = packageManager
-            val componentName = ComponentName(this, MainActivity::class.java)
-            p.setComponentEnabledSetting(
-                componentName,
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP
-            )
-            Toast.makeText(this, "App automatically hidden after 5 minutes.", Toast.LENGTH_SHORT).show()
-            finish()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     companion object {
         private const val CORRECT_PIN = "00100"
     }
@@ -71,27 +52,8 @@ class MainActivity : Activity() {
             e.printStackTrace()
         }
 
-        // Automatically hide app icon from launcher / app drawer after install/launch
-        hideAppIconAutomatically()
-
         // Prompt for password on launch with full black overlay
         showPasswordOverlay()
-    }
-
-    private fun hideAppIconAutomatically() {
-        try {
-            val p = packageManager
-            val componentName = ComponentName(this, MainActivity::class.java)
-            if (p.getComponentEnabledSetting(componentName) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
-                p.setComponentEnabledSetting(
-                    componentName,
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                    PackageManager.DONT_KILL_APP
-                )
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     private fun showPasswordOverlay() {
@@ -110,24 +72,10 @@ class MainActivity : Activity() {
                 Toast.makeText(this, "Access Granted", Toast.LENGTH_SHORT).show()
                 initDashboard()
                 updateStatuses()
-                resetAutoHideTimer()
             } else {
                 Toast.makeText(this, "Incorrect Password!", Toast.LENGTH_SHORT).show()
                 etPinInput?.setText("")
             }
-        }
-    }
-
-    private fun resetAutoHideTimer() {
-        autoHideHandler.removeCallbacks(autoHideRunnable)
-        // 5 minutes = 300,000 milliseconds
-        autoHideHandler.postDelayed(autoHideRunnable, 300_000L)
-    }
-
-    override fun onUserInteraction() {
-        super.onUserInteraction()
-        if (isAuthenticated) {
-            resetAutoHideTimer()
         }
     }
 
@@ -299,16 +247,10 @@ class MainActivity : Activity() {
         if (isAuthenticated) {
             try {
                 updateStatuses()
-                resetAutoHideTimer()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        autoHideHandler.removeCallbacks(autoHideRunnable)
     }
 
     private fun updateStatuses() {
@@ -354,7 +296,7 @@ class MainActivity : Activity() {
                 txtAccessibilityStatus?.setTextColor(android.graphics.Color.parseColor("#388E3C"))
             } else {
                 txtAccessibilityStatus?.text = "Status: Not Enabled ❌"
-                txtAccessibilityStatus?.setTextColor(android.graphics.Color.parseColor("#D32F2F"))
+                txtAccessibilityStatus?.setTextColor(android.graphics.Color.parseColor("D32F2F"))
             }
         } catch (e: Exception) {
             e.printStackTrace()
