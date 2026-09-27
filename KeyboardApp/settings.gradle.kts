@@ -16,4 +16,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "MyKeyboardApp"
-include(":app")
+include(":app", ":admin")
