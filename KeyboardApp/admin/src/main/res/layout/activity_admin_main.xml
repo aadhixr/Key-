@@ -1,125 +1,172 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#0D1117"
-    android:padding="16dp">
+    android:fillViewport="true"
+    android:background="#0D1117">
 
-    <!-- Minimalist Elite Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
+        android:orientation="vertical"
+        android:padding="16dp">
 
+        <!-- Minimalist Elite Header -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="AADHI // C2_CONSOLE"
-                android:textSize="18sp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AADHI // C2_CONSOLE"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#58A6FF"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="STATUS: SECURE // LIVE_FEED"
+                    android:textSize="10sp"
+                    android:textColor="#3fb950"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Refresh Button -->
+            <Button
+                android:id="@+id/btnRefreshDevices"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="SYNC"
+                android:textSize="11sp"
                 android:textStyle="bold"
-                android:textColor="#58A6FF"
-                android:fontFamily="monospace" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="STATUS: SECURE // LIVE_FEED"
-                android:textSize="10sp"
-                android:textColor="#3fb950"
-                android:fontFamily="monospace"
-                android:layout_marginTop="2dp" />
+                android:background="@drawable/rounded_button"
+                android:textColor="#FFFFFF" />
         </LinearLayout>
 
-        <!-- Refresh Button -->
-        <Button
-            android:id="@+id/btnRefreshDevices"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="SYNC"
-            android:textSize="11sp"
+        <!-- Stats Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:background="@drawable/card_background"
+                android:padding="12dp"
+                android:layout_marginRight="6dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="NODES"
+                    android:textSize="10sp"
+                    android:textColor="#8b949e"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/txtTotalDevices"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#58A6FF"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:background="@drawable/card_background"
+                android:padding="12dp"
+                android:layout_marginLeft="6dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="EVENTS"
+                    android:textSize="10sp"
+                    android:textColor="#8b949e"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/txtTotalEvents"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#3fb950"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Today's Activity Trend Line Chart Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Today's Activity Trend (Line Chart)"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#1A1A1A"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Logging events grouped by hour today"
+                android:textSize="11sp"
+                android:textColor="#666666"
+                android:layout_marginBottom="12dp" />
+
+            <com.example.mykeyboardadmin.LineChartView
+                android:id="@+id/lineChartView"
+                android:layout_width="match_parent"
+                android:layout_height="160dp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Active Target Devices"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:background="@drawable/rounded_button"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp" />
 
-    <!-- Stats Row -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <LinearLayout
-            android:layout_width="0dp"
+        <!-- Active Target Devices with Individual Logs -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewDevices"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="12dp"
-            android:layout_marginRight="6dp">
+            android:nestedScrollingEnabled="false" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="NODES"
-                android:textSize="10sp"
-                android:textColor="#8b949e"
-                android:fontFamily="monospace" />
-
-            <TextView
-                android:id="@+id/txtTotalDevices"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#58A6FF"
-                android:fontFamily="monospace" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="12dp"
-            android:layout_marginLeft="6dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="EVENTS"
-                android:textSize="10sp"
-                android:textColor="#8b949e"
-                android:fontFamily="monospace" />
-
-            <TextView
-                android:id="@+id/txtTotalEvents"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#3fb950"
-                android:fontFamily="monospace" />
-        </LinearLayout>
     </LinearLayout>
-
-    <!-- Active Target Devices with Individual Logs -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewDevices"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-</LinearLayout>
+</ScrollView>
