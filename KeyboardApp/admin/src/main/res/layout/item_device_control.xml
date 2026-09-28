@@ -13,31 +13,37 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="10dp">
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📱"
+            android:textSize="20sp"
+            android:layout_marginRight="8dp" />
 
         <TextView
             android:id="@+id/txtDeviceName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="NODE_ID"
-            android:textSize="16sp"
+            android:text="Device Name"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#1A1A1A"
-            android:fontFamily="monospace" />
+            android:textColor="#1A1A1A" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="ONLINE"
-            android:textSize="9sp"
+            android:textSize="10sp"
             android:textStyle="bold"
             android:textColor="#388E3C"
             android:background="#E8F5E9"
-            android:paddingLeft="6dp"
-            android:paddingRight="6dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp" />
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
     </LinearLayout>
 
     <!-- Toggle Buttons -->
@@ -52,53 +58,52 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="KEY_LOG: ON"
-            android:textSize="10sp"
+            android:text="Key Logger: ..."
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:background="@drawable/rounded_button"
+            android:background="#388E3C"
             android:textColor="#FFFFFF"
-            android:layout_marginRight="4dp" />
+            android:layout_marginRight="6dp" />
 
         <Button
             android:id="@+id/btnToggleNotifLog"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="NOTIF_LOG: ON"
-            android:textSize="10sp"
+            android:text="Notif Logger: ..."
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:background="@drawable/rounded_button"
+            android:background="#388E3C"
             android:textColor="#FFFFFF"
-            android:layout_marginLeft="4dp" />
+            android:layout_marginLeft="6dp" />
     </LinearLayout>
 
-    <!-- Individual Device Log Console Header -->
+    <!-- Log Console Header -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="INDIVIDUAL TELEMETRY FEED:"
+        android:text="Individual Device Activity &amp; Logs:"
         android:textStyle="bold"
-        android:textSize="11sp"
+        android:textSize="12sp"
         android:textColor="#555555"
-        android:fontFamily="monospace"
-        android:layout_marginBottom="4dp" />
+        android:layout_marginBottom="6dp" />
 
-    <!-- Scrollable Individual Log Console -->
+    <!-- Scrollable Terminal Log Console -->
     <ScrollView
         android:id="@+id/logScrollView"
         android:layout_width="match_parent"
-        android:layout_height="160dp"
+        android:layout_height="140dp"
         android:fillViewport="true"
-        android:background="#161B22"
-        android:padding="8dp">
+        android:background="#1E1E1E"
+        android:padding="10dp">
 
         <TextView
             android:id="@+id/txtDeviceLogConsole"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Waiting for telemetry..."
+            android:text="Listening for device events..."
             android:textSize="11sp"
-            android:textColor="#58A6FF"
+            android:textColor="#00FF00"
             android:fontFamily="monospace" />
     </ScrollView>
 
