@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#F8F9FA">
+    android:background="#0D1117">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -28,17 +28,20 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Keyboard Admin Control"
+                    android:text="AADHI // C2_CONSOLE"
                     android:textSize="20sp"
                     android:textStyle="bold"
-                    android:textColor="#1A1A1A" />
+                    android:textColor="#58A6FF"
+                    android:fontFamily="monospace" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Real-time device monitoring &amp; control"
-                    android:textSize="12sp"
-                    android:textColor="#666666" />
+                    android:text="STATUS: SECURE // LIVE_FEED"
+                    android:textSize="11sp"
+                    android:textColor="#3FB950"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="2dp" />
             </LinearLayout>
         </LinearLayout>
 
@@ -47,16 +50,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="@drawable/gradient_banner"
+            android:background="@drawable/card_background"
             android:padding="20dp"
             android:layout_marginBottom="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Welcome back,"
-                android:textSize="14sp"
-                android:textColor="#555555" />
+                android:text="WELCOME BACK,"
+                android:textSize="12sp"
+                android:textColor="#8B949E"
+                android:fontFamily="monospace" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -64,15 +68,15 @@
                 android:text="Admin 👋"
                 android:textSize="26sp"
                 android:textStyle="bold"
-                android:textColor="#1A1A1A"
+                android:textColor="#C9D1D9"
                 android:layout_marginTop="2dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Monitor and manage all connected devices in real time."
+                android:text="Monitor and manage all connected nodes in real time."
                 android:textSize="13sp"
-                android:textColor="#666666"
+                android:textColor="#8B949E"
                 android:layout_marginTop="6dp" />
         </LinearLayout>
 
@@ -102,9 +106,10 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Connected Devices"
-                        android:textSize="11sp"
-                        android:textColor="#666666" />
+                        android:text="CONNECTED"
+                        android:textSize="10sp"
+                        android:textColor="#8B949E"
+                        android:fontFamily="monospace" />
 
                     <TextView
                         android:id="@+id/txtTotalDevices"
@@ -113,7 +118,8 @@
                         android:text="0"
                         android:textSize="22sp"
                         android:textStyle="bold"
-                        android:textColor="#0277BD"
+                        android:textColor="#58A6FF"
+                        android:fontFamily="monospace"
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
 
@@ -130,18 +136,20 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Active Status"
-                        android:textSize="11sp"
-                        android:textColor="#666666" />
+                        android:text="STATUS"
+                        android:textSize="10sp"
+                        android:textColor="#8B949E"
+                        android:fontFamily="monospace" />
 
                     <TextView
                         android:id="@+id/txtActiveStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Online"
+                        android:text="ONLINE"
                         android:textSize="22sp"
                         android:textStyle="bold"
-                        android:textColor="#388E3C"
+                        android:textColor="#3FB950"
+                        android:fontFamily="monospace"
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -164,9 +172,10 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Total Events Captured"
-                        android:textSize="11sp"
-                        android:textColor="#666666" />
+                        android:text="EVENTS"
+                        android:textSize="10sp"
+                        android:textColor="#8B949E"
+                        android:fontFamily="monospace" />
 
                     <TextView
                         android:id="@+id/txtTotalEvents"
@@ -175,7 +184,8 @@
                         android:text="0"
                         android:textSize="22sp"
                         android:textStyle="bold"
-                        android:textColor="#E65100"
+                        android:textColor="#FFA657"
+                        android:fontFamily="monospace"
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
 
@@ -192,17 +202,19 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Real-Time Sync"
-                        android:textSize="11sp"
-                        android:textColor="#666666" />
+                        android:text="SYNC"
+                        android:textSize="10sp"
+                        android:textColor="#8B949E"
+                        android:fontFamily="monospace" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Active"
+                        android:text="ACTIVE"
                         android:textSize="22sp"
                         android:textStyle="bold"
-                        android:textColor="#7B1FA2"
+                        android:textColor="#D2A8FF"
+                        android:fontFamily="monospace"
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -212,22 +224,23 @@
         <Button
             android:id="@+id/btnRefreshDevices"
             android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:text="🔄 REFRESH &amp; SYNC DEVICES"
-            android:background="@drawable/gradient_button"
+            android:layout_height="50dp"
+            android:text="🔄 SYNC &amp; REFRESH NODES"
+            android:background="@drawable/rounded_button"
             android:textColor="#FFFFFF"
             android:textStyle="bold"
-            android:textSize="14sp"
-            android:elevation="4dp"
+            android:textSize="13sp"
+            android:fontFamily="monospace"
             android:layout_marginBottom="20dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Connected Target Devices"
-            android:textSize="18sp"
+            android:text="CONNECTED NODES // TELEMETRY"
+            android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#1A1A1A"
+            android:textColor="#58A6FF"
+            android:fontFamily="monospace"
             android:layout_marginBottom="10dp" />
 
         <androidx.recyclerview.widget.RecyclerView

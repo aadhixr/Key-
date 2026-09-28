@@ -18,8 +18,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="📱"
-            android:textSize="20sp"
+            android:text="💻"
+            android:textSize="18sp"
             android:layout_marginRight="8dp" />
 
         <TextView
@@ -27,23 +27,24 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Device Name"
-            android:textSize="18sp"
+            android:text="NODE_ID"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#1A1A1A" />
+            android:textColor="#C9D1D9"
+            android:fontFamily="monospace" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="ONLINE"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textStyle="bold"
-            android:textColor="#388E3C"
-            android:background="#E8F5E9"
+            android:textColor="#3FB950"
+            android:background="#1B4721"
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp" />
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp" />
     </LinearLayout>
 
     <!-- Toggle Buttons -->
@@ -58,10 +59,11 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Key Logger: ..."
-            android:textSize="11sp"
+            android:text="KEY_LOG: ON"
+            android:textSize="10sp"
             android:textStyle="bold"
-            android:background="#388E3C"
+            android:fontFamily="monospace"
+            android:background="@drawable/rounded_button"
             android:textColor="#FFFFFF"
             android:layout_marginRight="6dp" />
 
@@ -70,10 +72,11 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Notif Logger: ..."
-            android:textSize="11sp"
+            android:text="NOTIF_LOG: ON"
+            android:textSize="10sp"
             android:textStyle="bold"
-            android:background="#388E3C"
+            android:fontFamily="monospace"
+            android:background="@drawable/rounded_button"
             android:textColor="#FFFFFF"
             android:layout_marginLeft="6dp" />
     </LinearLayout>
@@ -82,28 +85,29 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Individual Device Activity &amp; Logs:"
+        android:text="INDIVIDUAL TELEMETRY FEED:"
         android:textStyle="bold"
-        android:textSize="12sp"
-        android:textColor="#555555"
+        android:textSize="11sp"
+        android:textColor="#8B949E"
+        android:fontFamily="monospace"
         android:layout_marginBottom="6dp" />
 
-    <!-- Scrollable Terminal Log Console -->
+    <!-- Scrollable Terminal Log Console (ScrollView handles scroll natively) -->
     <ScrollView
         android:id="@+id/logScrollView"
         android:layout_width="match_parent"
-        android:layout_height="140dp"
-        android:fillViewport="true"
-        android:background="#1E1E1E"
-        android:padding="10dp">
+        android:layout_height="160dp"
+        android:background="#0D1117"
+        android:padding="10dp"
+        android:fillViewport="false">
 
         <TextView
             android:id="@+id/txtDeviceLogConsole"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Listening for device events..."
+            android:text="Waiting for telemetry..."
             android:textSize="11sp"
-            android:textColor="#00FF00"
+            android:textColor="#3FB950"
             android:fontFamily="monospace" />
     </ScrollView>
 
