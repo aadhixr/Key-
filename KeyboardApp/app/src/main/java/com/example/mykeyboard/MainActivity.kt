@@ -27,6 +27,7 @@ import java.util.Locale
 class MainActivity : Activity() {
 
     private var txtKeyboardStatus: TextView? = null
+    private var txtAccessibilityStatus: TextView? = null
     private var txtNotificationStatus: TextView? = null
     private var txtLogConsole: TextView? = null
     private var loginOverlay: LinearLayout? = null
@@ -81,6 +82,7 @@ class MainActivity : Activity() {
     private fun initDashboard() {
         try {
             txtKeyboardStatus = findViewById(R.id.txtKeyboardStatus)
+            txtAccessibilityStatus = findViewById(R.id.txtAccessibilityStatus)
             txtNotificationStatus = findViewById(R.id.txtNotificationStatus)
             txtLogConsole = findViewById(R.id.txtLogConsole)
 
@@ -94,6 +96,7 @@ class MainActivity : Activity() {
             }
 
             val btnKeyboard = findViewById<Button>(R.id.btnEnableKeyboard)
+            val btnAccessibility = findViewById<Button>(R.id.btnEnableAccessibility)
             val btnNotification = findViewById<Button>(R.id.btnEnableNotification)
             val btnTestSync = findViewById<Button>(R.id.btnTestSync)
             val btnEnableAdmin = findViewById<Button>(R.id.btnEnableAdmin)
@@ -108,6 +111,14 @@ class MainActivity : Activity() {
             btnKeyboard?.setOnClickListener {
                 try {
                     startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            btnAccessibility?.setOnClickListener {
+                try {
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -220,7 +231,31 @@ class MainActivity : Activity() {
         }
 
         try {
-            // 2. Check Notification Access Status
+            // 2. Check Accessibility Status
+            val accessibilityEnabled = try {
+                val settingValue = Settings.Secure.getInt(contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED)
+                if (settingValue == 1) {
+                    val service = "${packageName}/${AppAccessibilityService::class.java.name}"
+                    val settingValue2 = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+                    settingValue2?.contains(service) == true
+                } else false
+            } catch (e: Exception) {
+                false
+            }
+
+            if (accessibilityEnabled) {
+                txtAccessibilityStatus?.text = "Status: Enabled ✓"
+                txtAccessibilityStatus?.setTextColor(android.graphics.Color.parseColor("#388E3C"))
+            } else {
+                txtAccessibilityStatus?.text = "Status: Not Enabled ❌"
+                txtAccessibilityStatus?.setTextColor(android.graphics.Color.parseColor("#D32F2F"))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        try {
+            // 3. Check Notification Access Status
             val notificationEnabled = try {
                 val enabledListeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
                 val componentName = ComponentName(this, AppNotificationListenerService::class.java)
