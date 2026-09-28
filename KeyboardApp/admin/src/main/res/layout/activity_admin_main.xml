@@ -221,39 +221,6 @@
             android:elevation="4dp"
             android:layout_marginBottom="20dp" />
 
-        <!-- App Logging Volume Horizontal Bar Chart Card -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp"
-            android:layout_marginBottom="20dp"
-            android:elevation="3dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="App Logging Volume"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#1A1A1A"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Total logging count per application"
-                android:textSize="11sp"
-                android:textColor="#666666"
-                android:layout_marginBottom="12dp" />
-
-            <com.example.mykeyboardadmin.HorizontalBarChartView
-                android:id="@+id/horizontalBarChartView"
-                android:layout_width="match_parent"
-                android:layout_height="220dp" />
-        </LinearLayout>
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

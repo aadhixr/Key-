@@ -78,23 +78,6 @@
             android:layout_marginLeft="6dp" />
     </LinearLayout>
 
-    <!-- Individual App Logging Volume Chart Header -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Individual App Logging Volume:"
-        android:textStyle="bold"
-        android:textSize="12sp"
-        android:textColor="#555555"
-        android:layout_marginBottom="4dp" />
-
-    <!-- Individual Horizontal Bar Chart View -->
-    <com.example.mykeyboardadmin.HorizontalBarChartView
-        android:id="@+id/deviceBarChart"
-        android:layout_width="match_parent"
-        android:layout_height="140dp"
-        android:layout_marginBottom="12dp" />
-
     <!-- Log Console Header -->
     <TextView
         android:layout_width="match_parent"
