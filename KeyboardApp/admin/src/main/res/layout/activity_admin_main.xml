@@ -237,38 +237,5 @@
             android:nestedScrollingEnabled="false"
             android:layout_marginBottom="20dp" />
 
-        <!-- Today's Activity Trend Line Chart Card -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp"
-            android:layout_marginBottom="20dp"
-            android:elevation="3dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Today's Activity Trend"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#1A1A1A"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Logging events grouped by hour today"
-                android:textSize="11sp"
-                android:textColor="#666666"
-                android:layout_marginBottom="12dp" />
-
-            <com.example.mykeyboardadmin.LineChartView
-                android:id="@+id/lineChartView"
-                android:layout_width="match_parent"
-                android:layout_height="160dp" />
-        </LinearLayout>
-
     </LinearLayout>
 </ScrollView>

