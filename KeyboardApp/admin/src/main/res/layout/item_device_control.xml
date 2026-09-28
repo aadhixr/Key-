@@ -83,16 +83,23 @@
         android:fontFamily="monospace"
         android:layout_marginBottom="4dp" />
 
-    <!-- Direct Scrollable TextView Console -->
-    <TextView
-        android:id="@+id/txtDeviceLogConsole"
+    <!-- Scrollable Individual Log Console -->
+    <ScrollView
+        android:id="@+id/logScrollView"
         android:layout_width="match_parent"
         android:layout_height="160dp"
+        android:fillViewport="true"
         android:background="#161B22"
-        android:padding="8dp"
-        android:text="Waiting for telemetry..."
-        android:textSize="11sp"
-        android:textColor="#58A6FF"
-        android:fontFamily="monospace" />
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/txtDeviceLogConsole"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Waiting for telemetry..."
+            android:textSize="11sp"
+            android:textColor="#58A6FF"
+            android:fontFamily="monospace" />
+    </ScrollView>
 
 </LinearLayout>

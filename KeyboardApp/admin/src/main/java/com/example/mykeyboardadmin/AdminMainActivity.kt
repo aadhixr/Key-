@@ -2,8 +2,8 @@ package com.example.mykeyboardadmin
 
 import android.graphics.Color
 import android.os.Bundle
-import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -216,6 +216,7 @@ class AdminMainActivity : AppCompatActivity() {
             val btnKey: Button = view.findViewById<Button>(R.id.btnToggleKeyLog)
             val btnNotif: Button = view.findViewById<Button>(R.id.btnToggleNotifLog)
             val txtLog: TextView = view.findViewById<TextView>(R.id.txtDeviceLogConsole)
+            val scrollView: View = view.findViewById<View>(R.id.logScrollView)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -243,7 +244,17 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.setBackgroundColor(Color.parseColor("#DA3633"))
             }
 
-            holder.txtLog.movementMethod = ScrollingMovementMethod()
+            holder.scrollView.setOnTouchListener { v, event ->
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                        v.parent.requestDisallowInterceptTouchEvent(true)
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        v.parent.requestDisallowInterceptTouchEvent(false)
+                    }
+                }
+                false
+            }
             holder.txtLog.text = device.logFeed
 
             holder.btnKey.setOnClickListener {
