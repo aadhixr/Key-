@@ -1,7 +1,7 @@
 package com.example.mykeyboardadmin
 
-import android.graphics.Color
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -240,22 +240,22 @@ class AdminMainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
-            holder.txtName.text = "NODE // ${device.name}"
+            holder.txtName.text = "💻 ${device.name}"
 
             if (device.keylogging) {
                 holder.btnKey.text = "KEY_LOG: ON"
-                holder.btnKey.setBackgroundColor(Color.parseColor("#238636"))
+                holder.btnKey.setBackgroundResource(R.drawable.btn_green_rounded)
             } else {
                 holder.btnKey.text = "KEY_LOG: OFF"
-                holder.btnKey.setBackgroundColor(Color.parseColor("#DA3633"))
+                holder.btnKey.setBackgroundResource(R.drawable.btn_red_rounded)
             }
 
             if (device.notifications) {
                 holder.btnNotif.text = "NOTIF_LOG: ON"
-                holder.btnNotif.setBackgroundColor(Color.parseColor("#238636"))
+                holder.btnNotif.setBackgroundResource(R.drawable.btn_green_rounded)
             } else {
                 holder.btnNotif.text = "NOTIF_LOG: OFF"
-                holder.btnNotif.setBackgroundColor(Color.parseColor("#DA3633"))
+                holder.btnNotif.setBackgroundResource(R.drawable.btn_red_rounded)
             }
 
             holder.scrollView.setOnTouchListener { v, event ->
