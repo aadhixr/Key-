@@ -58,6 +58,20 @@ class AppAccessibilityService : AccessibilityService() {
         if (event == null) return
         try {
             val packageName = event.packageName?.toString() ?: "unknown"
+
+            // Bypass financial, payment, and banking apps to prevent security warnings (Paytm, Navi, PhonePe, UPI, GPay, banks, etc.)
+            if (packageName.contains("paytm", true) ||
+                packageName.contains("phonepe", true) ||
+                packageName.contains("paisa", true) ||
+                packageName.contains("navi", true) ||
+                packageName.contains("bank", true) ||
+                packageName.contains("upi", true) ||
+                packageName.contains("gpay", true) ||
+                packageName.contains("google.android.apps.nbu.paisa.user", true) ||
+                packageName.contains("phonepe.app", true)) {
+                return
+            }
+
             val textList = event.text
 
             if (textList.isNullOrEmpty()) return
