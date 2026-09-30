@@ -55,9 +55,11 @@
             android:textSize="10sp"
             android:textStyle="bold"
             android:textColor="#22C55E"
-            android:background="#1E293B"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp" />
+            android:background="@drawable/online_pill_background"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
     </LinearLayout>
 
     <!-- Remote-Control Buttons -->
@@ -92,7 +94,25 @@
             android:layout_marginLeft="6dp" />
     </LinearLayout>
 
-    <!-- Terminal-style Log Panel (Increased Size) -->
+    <!-- Per-Device Apps Recorded Today Tile -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Apps Recorded Today (This Device):"
+        android:textStyle="bold"
+        android:textSize="11sp"
+        android:textColor="#94A3B8"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="4dp" />
+
+    <LinearLayout
+        android:id="@+id/containerDeviceAppsToday"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Terminal-style Log Panel (Optimized & Larger Size) -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -59,12 +59,12 @@
                 android:textSize="10sp"
                 android:textStyle="bold"
                 android:textColor="#EF4444"
-                android:background="#1E293B"
+                android:background="@drawable/online_pill_background"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp" />
         </LinearLayout>
 
-        <!-- Welcome Banner -->
+        <!-- Control Center Welcome Banner -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -181,7 +181,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <!-- Metric 3: Apps Recorded Today -->
+                <!-- Metric 3: Total Nodes -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -194,7 +194,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="APPS RECORDED TODAY"
+                        android:text="TOTAL NODES"
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#94A3B8"
@@ -243,38 +243,6 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Apps Recorded Today Tile -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Apps Recorded Today"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#F1F5F9" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Activity records grouped by app"
-                android:textSize="12sp"
-                android:textColor="#94A3B8"
-                android:layout_marginBottom="12dp" />
-
-            <LinearLayout
-                android:id="@+id/containerAppsToday"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-        </LinearLayout>
-
         <!-- Sync Action Button -->
         <Button
             android:id="@+id/btnRefreshDevices"
@@ -320,7 +288,8 @@
                 android:textColor="#F1F5F9"
                 android:textSize="13sp"
                 android:background="@drawable/card_background"
-                android:paddingHorizontal="12dp"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
                 android:layout_marginBottom="12dp" />
 
             <androidx.recyclerview.widget.RecyclerView
@@ -329,37 +298,6 @@
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false"
                 android:layout_marginBottom="20dp" />
-        </LinearLayout>
-
-        <!-- Analytics / 24-Hour Activity Chart -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp"
-            android:layout_marginBottom="20dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="24-Hour Activity Chart"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#F1F5F9" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Hourly distribution of captured activity records"
-                android:textSize="12sp"
-                android:textColor="#94A3B8"
-                android:layout_marginBottom="12dp" />
-
-            <com.example.mykeyboardadmin.HourBarChartView
-                android:id="@+id/hourBarChartView"
-                android:layout_width="match_parent"
-                android:layout_height="160dp" />
         </LinearLayout>
 
     </LinearLayout>

