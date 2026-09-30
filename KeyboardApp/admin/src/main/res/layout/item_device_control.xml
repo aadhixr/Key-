@@ -94,11 +94,11 @@
             android:layout_marginLeft="6dp" />
     </LinearLayout>
 
-    <!-- Per-Device Apps Recorded Today Tile -->
+    <!-- Per-Device Apps Recorded Today Tile (Clickable for App-Specific Logs) -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Apps Recorded Today (This Device):"
+        android:text="Apps Recorded Today (Click App to Filter):"
         android:textStyle="bold"
         android:textSize="11sp"
         android:textColor="#94A3B8"
@@ -112,11 +112,43 @@
         android:orientation="vertical"
         android:layout_marginBottom="12dp" />
 
-    <!-- Terminal-style Log Panel (Optimized & Larger Size) -->
+    <!-- Filter Header & Back to All Logs Button -->
+    <LinearLayout
+        android:id="@+id/layoutFilterHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="4dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/txtActiveFilter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Filtering: App"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:fontFamily="monospace" />
+
+        <Button
+            android:id="@+id/btnBackToAll"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:text="Back to All Logs"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:background="@drawable/btn_blue_rounded"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Terminal-style Log Panel -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="FULL RECORDED TELEMETRY FEED:"
+        android:text="INDIVIDUAL TELEMETRY FEED:"
         android:textStyle="bold"
         android:textSize="11sp"
         android:textColor="#94A3B8"
