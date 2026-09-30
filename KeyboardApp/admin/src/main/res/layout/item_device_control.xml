@@ -42,7 +42,7 @@
                 android:id="@+id/txtDeviceSub"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Active Node"
+                android:text="Active Node // Full Telemetry"
                 android:textSize="11sp"
                 android:textColor="#94A3B8" />
         </LinearLayout>
@@ -92,11 +92,11 @@
             android:layout_marginLeft="6dp" />
     </LinearLayout>
 
-    <!-- Terminal-style Log Panel -->
+    <!-- Terminal-style Log Panel (Increased Size) -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="TELEMETRY LOG PANEL:"
+        android:text="FULL RECORDED TELEMETRY FEED:"
         android:textStyle="bold"
         android:textSize="11sp"
         android:textColor="#94A3B8"
@@ -106,7 +106,7 @@
     <ScrollView
         android:id="@+id/logScrollView"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="260dp"
         android:background="#0A0F1D"
         android:padding="10dp"
         android:fillViewport="false">
