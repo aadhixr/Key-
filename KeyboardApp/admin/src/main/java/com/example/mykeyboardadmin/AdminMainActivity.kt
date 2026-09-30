@@ -246,7 +246,7 @@ class AdminMainActivity : AppCompatActivity() {
         if (sortedApps.isEmpty()) {
             val emptyTv = TextView(this).apply {
                 text = "No app activity recorded today."
-                textSize = 12sp
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
                 setTextColor(Color.parseColor("#94A3B8"))
                 setPadding(0, 4, 0, 4)
             }
@@ -268,43 +268,30 @@ class AdminMainActivity : AppCompatActivity() {
 
             val nameTv = TextView(this).apply {
                 text = appName
-                textSize = 12sp
-                textStyle = android.graphics.Typeface.BOLD
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+                setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(Color.parseColor("#F1F5F9"))
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             }
 
             val countTv = TextView(this).apply {
                 text = "$count records"
-                textSize = 11sp
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
                 setTextColor(Color.parseColor("#38BDF8"))
-                fontFamily = android.graphics.Typeface.MONOSPACE
+                typeface = android.graphics.Typeface.MONOSPACE
             }
 
             headerRow.addView(nameTv)
             headerRow.addView(countTv)
             rowLayout.addView(headerRow)
 
-            // Relative horizontal bar
-            val barBg = View(this).apply {
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 6).apply { topMargin = 4 }
-                setBackgroundColor(Color.parseColor("#1E293B"))
-            }
-
-            val percent = (count.toFloat() / maxCount).coerceIn(0.01f, 1f)
-            val barFill = View(this).apply {
-                layoutParams = LinearLayout.LayoutParams(0, 6).apply { topMargin = -6 }
-                setBackgroundColor(Color.parseColor("#38BDF8"))
-                // use weight or layout width proportionally
-            }
-
-            // Simple custom wrapper for relative bar
             val barContainer = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 6).apply { topMargin = 4 }
                 setBackgroundColor(Color.parseColor("#1E293B"))
             }
 
+            val percent = (count.toFloat() / maxCount).coerceIn(0.01f, 1f)
             val fillView = View(this).apply {
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, percent)
                 setBackgroundColor(Color.parseColor("#38BDF8"))
@@ -353,7 +340,7 @@ class AdminMainActivity : AppCompatActivity() {
                 if (index != -1) {
                     masterDeviceList[index].keylogging = key
                     masterDeviceList[index].notifications = notif
-                    adapter.notifyDataSetChanged()
+                    adapter.notifyItemChanged(index)
                 }
             }
 
@@ -410,7 +397,7 @@ class AdminMainActivity : AppCompatActivity() {
                 val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
                     masterDeviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded yet."
-                    adapter.notifyDataSetChanged()
+                    adapter.notifyItemChanged(index)
                 }
             }
 
