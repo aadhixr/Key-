@@ -190,6 +190,7 @@ class AdminMainActivity : AppCompatActivity() {
 
                     for (appChild in child.children) {
                         val rawApp = appChild.key ?: continue
+                        if (rawApp.startsWith("notification_", true)) continue
                         val prettyApp = getPrettyAppName(rawApp)
                         for (entry in appChild.children) {
                             val text = entry.child("text").getValue(String::class.java)
@@ -323,6 +324,9 @@ class AdminMainActivity : AppCompatActivity() {
 
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
+                    // Exclude notification nodes from app breakdown and app-specific log filtering
+                    if (rawApp.startsWith("notification_", true)) continue
+
                     val prettyApp = getPrettyAppName(rawApp)
                     for (entry in appChild.children) {
                         val text = entry.child("text").getValue(String::class.java)
@@ -411,7 +415,7 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.layoutFilterHeader.visibility = View.GONE
             }
 
-            // Populate per-device Apps Recorded Today with click filtering
+            // Populate per-device Apps Recorded Today with click filtering (excluding notifications)
             populateDeviceAppsToday(holder.containerDeviceAppsToday, device.appsTodayMap) { appName ->
                 device.selectedAppFilter = appName
                 notifyItemChanged(position)
