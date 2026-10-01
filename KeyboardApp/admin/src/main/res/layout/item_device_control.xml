@@ -94,11 +94,11 @@
             android:layout_marginLeft="6dp" />
     </LinearLayout>
 
-    <!-- Per-Device Apps Recorded Today Tile (Clickable for App-Specific Logs) -->
+    <!-- Per-Device All Recorded Apps Tile (Clickable for App-Specific Logs) -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Apps Recorded Today (Click App to Filter):"
+        android:text="All Recorded Apps (Click App to Filter):"
         android:textStyle="bold"
         android:textSize="11sp"
         android:textColor="#94A3B8"

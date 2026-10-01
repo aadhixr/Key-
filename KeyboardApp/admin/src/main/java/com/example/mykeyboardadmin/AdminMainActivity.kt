@@ -22,7 +22,6 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -77,17 +76,11 @@ class AdminMainActivity : AppCompatActivity() {
                 }
             }
 
-        val appsTodayMap: Map<String, Int>
+        val appsTotalMap: Map<String, Int>
             get() {
                 val map = mutableMapOf<String, Int>()
-                val calendar = Calendar.getInstance()
-                val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
-                val todayYear = calendar.get(Calendar.YEAR)
                 for (entry in rawEntries) {
-                    calendar.timeInMillis = entry.first
-                    if (calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear && calendar.get(Calendar.YEAR) == todayYear) {
-                        map[entry.second] = (map[entry.second] ?: 0) + 1
-                    }
+                    map[entry.second] = (map[entry.second] ?: 0) + 1
                 }
                 return map
             }
@@ -324,9 +317,7 @@ class AdminMainActivity : AppCompatActivity() {
 
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
-                    // Exclude notification nodes from app breakdown and app-specific log filtering
                     if (rawApp.startsWith("notification_", true)) continue
-
                     val prettyApp = getPrettyAppName(rawApp)
                     for (entry in appChild.children) {
                         val text = entry.child("text").getValue(String::class.java)
@@ -415,8 +406,8 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.layoutFilterHeader.visibility = View.GONE
             }
 
-            // Populate per-device Apps Recorded Today with click filtering (excluding notifications)
-            populateDeviceAppsToday(holder.containerDeviceAppsToday, device.appsTodayMap) { appName ->
+            // Populate per-device All Recorded Apps with click filtering
+            populateDeviceAppsToday(holder.containerDeviceAppsToday, device.appsTotalMap) { appName ->
                 device.selectedAppFilter = appName
                 notifyItemChanged(position)
             }
@@ -450,7 +441,7 @@ class AdminMainActivity : AppCompatActivity() {
 
             if (sortedApps.isEmpty()) {
                 val emptyTv = TextView(context).apply {
-                    text = "No app activity recorded today."
+                    text = "No app activity recorded."
                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
                     setTextColor(Color.parseColor("#94A3B8"))
                 }
