@@ -59,11 +59,11 @@ class AdminMainActivity : AppCompatActivity() {
                 } else {
                     rawEntries.take(200) // Default last 200 logs on console
                 }
-                val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 val sb = StringBuilder()
                 for (item in filtered) {
-                    val timeStr = timeFormat.format(Date(item.first))
-                    sb.append("[$timeStr] ${item.second}: ${item.third}\n")
+                    val dateStr = dateTimeFormat.format(Date(item.first))
+                    sb.append("[$dateStr] [${item.second}] ${item.third}\n")
                 }
                 val totalCount = if (selectedAppFilter != null) {
                     rawEntries.count { it.second == selectedAppFilter }
@@ -71,7 +71,7 @@ class AdminMainActivity : AppCompatActivity() {
                     rawEntries.size
                 }
                 return if (sb.isNotEmpty()) {
-                    "=== ${selectedAppFilter?.uppercase() ?: "ALL"} TELEMETRY (Showing ${filtered.size} of $totalCount total) ===\n\n$sb"
+                    "=== ${selectedAppFilter?.uppercase() ?: "ALL APPS"} TELEMETRY (Showing ${filtered.size} of $totalCount total) ===\n\n$sb"
                 } else {
                     "No telemetry recorded for ${selectedAppFilter ?: "device"}."
                 }
@@ -301,6 +301,10 @@ class AdminMainActivity : AppCompatActivity() {
     private fun getPrettyAppName(pkg: String): String {
         return when {
             pkg.contains("whatsapp", true) -> "WhatsApp"
+            pkg.contains("paytm", true) -> "Paytm"
+            pkg.contains("phonepe", true) -> "PhonePe"
+            pkg.contains("paisa", true) -> "GPay"
+            pkg.contains("navi", true) -> "Navi"
             pkg.contains("chrome", true) -> "Chrome"
             pkg.contains("youtube", true) -> "YouTube"
             pkg.contains("instagram", true) -> "Instagram"
