@@ -94,23 +94,32 @@
             android:layout_marginLeft="6dp" />
     </LinearLayout>
 
-    <!-- Per-Device All Recorded Apps Tile (Clickable for App-Specific Logs) -->
+    <!-- Per-Device All Recorded Apps Tile (Scrollable, same size as logs) -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="All Recorded Apps (Click App to Filter):"
+        android:text="ALL RECORDED APPS (Scrollable - Tap to Filter):"
         android:textStyle="bold"
         android:textSize="11sp"
         android:textColor="#94A3B8"
         android:fontFamily="monospace"
         android:layout_marginBottom="4dp" />
 
-    <LinearLayout
-        android:id="@+id/containerDeviceAppsToday"
+    <ScrollView
+        android:id="@+id/appsScrollView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginBottom="12dp" />
+        android:layout_height="260dp"
+        android:background="#0A0F1D"
+        android:padding="8dp"
+        android:layout_marginBottom="12dp"
+        android:fillViewport="false">
+
+        <LinearLayout
+            android:id="@+id/containerDeviceAppsToday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
 
     <!-- Filter Header & Back to All Logs Button -->
     <LinearLayout

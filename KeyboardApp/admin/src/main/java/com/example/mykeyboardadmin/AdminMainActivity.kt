@@ -22,6 +22,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -362,6 +363,7 @@ class AdminMainActivity : AppCompatActivity() {
             val txtLog: TextView = view.findViewById<TextView>(R.id.txtDeviceLogConsole)
             val scrollView: View = view.findViewById<View>(R.id.logScrollView)
             val containerDeviceAppsToday: LinearLayout = view.findViewById<LinearLayout>(R.id.containerDeviceAppsToday)
+            val appsScrollView: View = view.findViewById<View>(R.id.appsScrollView)
             val layoutFilterHeader: View = view.findViewById<View>(R.id.layoutFilterHeader)
             val txtActiveFilter: TextView = view.findViewById<TextView>(R.id.txtActiveFilter)
             val btnBackToAll: Button = view.findViewById<Button>(R.id.btnBackToAll)
@@ -412,6 +414,20 @@ class AdminMainActivity : AppCompatActivity() {
                 notifyItemChanged(position)
             }
 
+            // Touch disallow intercept for apps scrollview
+            holder.appsScrollView.setOnTouchListener { v, event ->
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                        v.parent.requestDisallowInterceptTouchEvent(true)
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        v.parent.requestDisallowInterceptTouchEvent(false)
+                    }
+                }
+                false
+            }
+
+            // Touch disallow intercept for logs scrollview
             holder.scrollView.setOnTouchListener { v, event ->
                 when (event.action) {
                     MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
