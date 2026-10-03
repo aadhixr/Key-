@@ -76,6 +76,12 @@ class AdminMainActivity : AppCompatActivity() {
             }
     }
 
+    data class LogEntry(
+        val timestamp: Long,
+        val appName: String,
+        val text: String
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
@@ -313,7 +319,7 @@ class AdminMainActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
 
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val txtDeviceName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
+            val txtName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
             val txtDeviceSub: TextView = view.findViewById<TextView>(R.id.txtDeviceSub)
             val txtPresencePill: TextView = view.findViewById<TextView>(R.id.txtPresencePill)
             val btnKey: Button = view.findViewById<Button>(R.id.btnToggleKeyLog)
