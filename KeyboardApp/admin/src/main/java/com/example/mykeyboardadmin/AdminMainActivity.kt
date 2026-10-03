@@ -214,7 +214,7 @@ class AdminMainActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 CoroutineScope(Dispatchers.IO).launch {
                     val entries = mutableListOf<Triple<Long, String, String>>()
-                    val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                    val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
                     for (appChild in snapshot.children) {
                         val rawApp = appChild.key ?: continue
@@ -238,10 +238,10 @@ class AdminMainActivity : AppCompatActivity() {
                     // Sort newest on top (latest first)
                     entries.sortByDescending { it.first }
 
-                    // Take latest 100 entries and display immediately
+                    // Take latest 100 entries with exact Date & Time sync
                     val cappedEntries = entries.take(100).joinToString("\n") { item ->
-                        val timeStr = timeFormat.format(Date(item.first))
-                        "[$timeStr] [${item.second}] ${item.third}"
+                        val dateStr = dateTimeFormat.format(Date(item.first))
+                        "[$dateStr] [${item.second}] ${item.third}"
                     }
 
                     withContext(Dispatchers.Main) {
