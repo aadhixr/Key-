@@ -181,7 +181,7 @@ class AdminMainActivity : AppCompatActivity() {
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 CoroutineScope(Dispatchers.IO).launch {
-                    val entries = mutableListOf<String>()
+                    val entries = mutableListOf<Triple<Long, String, String>>()
                     val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
                     for (appChild in snapshot.children) {
@@ -196,14 +196,19 @@ class AdminMainActivity : AppCompatActivity() {
                             val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
 
                             if (text.isNotBlank() && text != "null") {
-                                val timeStr = timeFormat.format(Date(timestampMillis))
-                                entries.add("[$timeStr] [$prettyApp] $text")
+                                entries.add(Triple(timestampMillis, prettyApp, text))
                             }
                         }
                     }
 
-                    // Take latest 100 entries for zero lag & zero ANR
-                    val cappedEntries = entries.takeLast(100).reversed().joinToString("\n")
+                    // Sort newest on top (latest first)
+                    entries.sortByDescending { it.first }
+
+                    // Take latest 100 entries
+                    val cappedEntries = entries.take(100).joinToString("\n") { item ->
+                        val timeStr = timeFormat.format(Date(item.first))
+                        "[$timeStr] [${item.second}] ${item.third}"
+                    }
 
                     withContext(Dispatchers.Main) {
                         val index = deviceList.indexOfFirst { it.name == deviceName }
