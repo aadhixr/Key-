@@ -14,10 +14,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="12dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:background="?attr/selectableItemBackground">
+        android:layout_marginBottom="12dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -97,6 +94,17 @@
             android:textColor="#FFFFFF"
             android:layout_marginLeft="6dp" />
     </LinearLayout>
+
+    <!-- Live Screen State View -->
+    <TextView
+        android:id="@+id/txtLiveScreenState"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Live Screen: Waiting..."
+        android:textSize="11sp"
+        android:textColor="#3FB950"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="8dp" />
 
     <!-- Collapsible Log Container (Hidden by default to prevent lag) -->
     <LinearLayout
