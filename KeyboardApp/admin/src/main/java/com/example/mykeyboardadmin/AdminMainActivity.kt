@@ -315,7 +315,7 @@ class AdminMainActivity : AppCompatActivity() {
                 }
 
                 // Sort newest on top
-                entries.sortByDescending { _ -> _.first }
+                entries.sortByDescending { it.first }
 
                 val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
@@ -364,7 +364,7 @@ class AdminMainActivity : AppCompatActivity() {
                 holder.txtDeviceSub.text = "Active Node // Expanded (24h Logs)"
                 holder.layoutExpandableContent.visibility = View.VISIBLE
             } else {
-                holder.txtDeviceSub.text = "Active Node // Tap to Expand"
+                holder.txtDeviceSub.text = "Active Node // Tap to Expand Logs"
                 holder.layoutExpandableContent.visibility = View.GONE
             }
 
