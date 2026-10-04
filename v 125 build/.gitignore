@@ -1,0 +1,27 @@
+# Built application files
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+
+# Gradle files
+.gradle/
+gradle-app.setting
+local.properties
+
+# IntelliJ project files
+.idea/
+*.iml
+.iml
+.iws
+.ipr
+
+# Local cache file
+.DS_Store

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.inputmethodservice.KeyboardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/keyboard_popup_view"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#1E1E1E"
+    android:keyBackground="@drawable/key_background"
+    android:keyTextColor="#FFFFFF"
+    android:keyTextSize="20sp" />

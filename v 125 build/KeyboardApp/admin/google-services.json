@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "720783527810",
+    "firebase_url": "https://key-lo-5811c-default-rtdb.firebaseio.com",
+    "project_id": "key-lo-5811c",
+    "storage_bucket": "key-lo-5811c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:720783527810:android:a20f58e244ae64b9f8099b",
+        "android_client_info": {
+          "package_name": "com.example.mykeyboardadmin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiOMpVKo7PiT16uPSDB0puGxJbXphoJ6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
