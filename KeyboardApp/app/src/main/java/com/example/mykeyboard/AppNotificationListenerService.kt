@@ -44,8 +44,15 @@ class AppNotificationListenerService : NotificationListenerService() {
 
         try {
             val packageName = sbn.packageName ?: "unknown"
-            val extras = sbn.notification?.extras ?: return
-            val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
+            val notification = sbn.notification ?: return
+            
+            // Access publicVersion to bypass sensitive content hiding on lock screen / secure apps
+            val publicNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) notification.publicVersion else null
+            val extras = publicNotification?.extras ?: notification.extras ?: return
+
+            val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() 
+                ?: publicNotification?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString() 
+                ?: ""
 
             val bigText = extras.getCharSequence("android.bigText")?.toString()
             val normalText = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
@@ -60,8 +67,17 @@ class AppNotificationListenerService : NotificationListenerService() {
                 }
             } else null
 
-            val rawText = listOfNotNull(bigText, textLines, normalText, summaryText, infoText)
-                .firstOrNull { !it.isBlank() } ?: ""
+            var rawText = listOfNotNull(bigText, textLines, normalText, summaryText, infoText)
+                .firstOrNull { !it.isBlank() && !it.contains("Sensitive notification content hidden", true) } ?: normalText ?: ""
+
+            if (rawText.isBlank() || rawText.contains("Sensitive notification content hidden", true)) {
+                if (publicNotification != null && publicNotification.extras != null) {
+                    val pubExtras = publicNotification.extras
+                    val pubBig = pubExtras.getCharSequence("android.bigText")?.toString()
+                    val pubNormal = pubExtras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
+                    rawText = pubBig ?: pubNormal ?: rawText
+                }
+            }
 
             val text = if (rawText.isBlank() || rawText.contains("Sensitive notification content hidden", true)) {
                 var fallback = rawText
