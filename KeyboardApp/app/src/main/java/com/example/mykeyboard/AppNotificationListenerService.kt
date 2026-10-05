@@ -46,7 +46,38 @@ class AppNotificationListenerService : NotificationListenerService() {
             val packageName = sbn.packageName ?: "unknown"
             val extras = sbn.notification?.extras ?: return
             val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
-            val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+
+            val bigText = extras.getCharSequence("android.bigText")?.toString()
+            val normalText = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
+            val summaryText = extras.getCharSequence("android.summaryText")?.toString()
+            val infoText = extras.getCharSequence("android.infoText")?.toString()
+
+            val textLines = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                try {
+                    extras.getCharSequenceArray("android.textLines")?.map { it.toString() }?.joinToString("\n")
+                } catch (_: Exception) {
+                    null
+                }
+            } else null
+
+            val rawText = listOfNotNull(bigText, textLines, normalText, summaryText, infoText)
+                .firstOrNull { !it.isBlank() } ?: ""
+
+            val text = if (rawText.isBlank() || rawText.contains("Sensitive notification content hidden", true)) {
+                var fallback = rawText
+                try {
+                    for (key in extras.keySet()) {
+                        val value = extras.get(key)
+                        if (value is CharSequence && !value.isBlank() && !value.toString().contains("hidden", true)) {
+                            fallback = value.toString()
+                            break
+                        }
+                    }
+                } catch (_: Exception) {}
+                fallback.ifBlank { rawText }
+            } else {
+                rawText
+            }
 
             if (title.isBlank() && text.isBlank()) return
 
