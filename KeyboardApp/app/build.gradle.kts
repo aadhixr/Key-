@@ -22,8 +22,8 @@ android {
         applicationId = "com.example.mykeyboard"
         minSdk = 21
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 7
+        versionName = "1.3.2"
         buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
     }
 

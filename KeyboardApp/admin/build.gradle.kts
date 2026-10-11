@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.mykeyboardadmin"
         minSdk = 21
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 7
+        versionName = "1.3.2"
     }
 
     signingConfigs {
